@@ -163,7 +163,8 @@ class AppLocalizationsKk extends AppLocalizations {
   String get recordingPaused => 'Жазу үзілісте. Деректер жиналмайды.';
 
   @override
-  String get recordingActive => 'Жазу демо режимінде жүріп жатыр.';
+  String get recordingActive =>
+      'Жазба белсенді. Деректер осы құрылғыда сақталады.';
 
   @override
   String get tripResult => 'Сапар нәтижесі';

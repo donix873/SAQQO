@@ -401,7 +401,7 @@ abstract class AppLocalizations {
   /// No description provided for @recordingActive.
   ///
   /// In ru, this message translates to:
-  /// **'Запись идёт в демонстрационном режиме.'**
+  /// **'Запись активна. Данные хранятся на этом устройстве.'**
   String get recordingActive;
 
   /// No description provided for @tripResult.

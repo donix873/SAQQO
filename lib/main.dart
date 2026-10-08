@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -462,6 +464,10 @@ class _RecordingPageState extends State<RecordingPage> {
   RecordingState _state = RecordingState.idle;
   final _session = SensorSessionService();
   var _candidateCount = 0;
+  DateTime? _startedAt;
+  DateTime? _activeSince;
+  Duration _elapsed = Duration.zero;
+  Timer? _clock;
 
   @override
   void initState() {
@@ -473,6 +479,7 @@ class _RecordingPageState extends State<RecordingPage> {
 
   @override
   void dispose() {
+    _clock?.cancel();
     _session.dispose();
     super.dispose();
   }
@@ -480,16 +487,49 @@ class _RecordingPageState extends State<RecordingPage> {
   Future<void> _toggle() async {
     if (_state == RecordingState.active) {
       await _session.pause();
+      _pauseClock();
       if (mounted) setState(() => _state = RecordingState.paused);
       return;
     }
     await _session.start();
+    _startedAt ??= DateTime.now();
+    _activeSince = DateTime.now();
+    _clock ??= Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
     if (mounted) setState(() => _state = RecordingState.active);
   }
 
   Future<void> _finish() async {
     await _session.stop();
-    if (mounted) _pushReplacement(context, const TripResultPage());
+    _pauseClock();
+    final record = TripRecord(
+      id: '${_startedAt!.microsecondsSinceEpoch}',
+      startedAt: _startedAt!,
+      duration: _elapsed,
+      candidateCount: _candidateCount,
+    );
+    if (mounted) _pushReplacement(context, TripResultPage(record: record));
+  }
+
+  void _pauseClock() {
+    if (_activeSince != null) {
+      _elapsed += DateTime.now().difference(_activeSince!);
+    }
+    _activeSince = null;
+    _clock?.cancel();
+    _clock = null;
+  }
+
+  Duration get _displayedDuration => _activeSince == null
+      ? _elapsed
+      : _elapsed + DateTime.now().difference(_activeSince!);
+
+  String get _durationText {
+    final value = _displayedDuration;
+    final minutes = value.inMinutes.toString().padLeft(2, '0');
+    final seconds = (value.inSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
   }
 
   @override
@@ -512,10 +552,7 @@ class _RecordingPageState extends State<RecordingPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Metric(
-                      label: l.duration,
-                      value: _state == RecordingState.idle ? '00:00' : '00:18',
-                    ),
+                    Metric(label: l.duration, value: _durationText),
                     Metric(label: l.candidates, value: '$_candidateCount'),
                   ],
                 ),
@@ -568,7 +605,8 @@ class _RecordingPageState extends State<RecordingPage> {
 }
 
 class TripResultPage extends StatelessWidget {
-  const TripResultPage({super.key});
+  const TripResultPage({super.key, required this.record});
+  final TripRecord record;
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -582,7 +620,7 @@ class TripResultPage extends StatelessWidget {
           const SizedBox(height: SaqgoSpacing.md),
           FilledButton(
             onPressed: () async {
-              await LifeLogStore.setDemoTrip(true);
+              await LifeLogStore.add(record);
               if (context.mounted) {
                 Navigator.of(context).popUntil((route) => route.isFirst);
               }
@@ -709,24 +747,32 @@ class HistoryPage extends StatelessWidget {
           const SizedBox(height: SaqgoSpacing.md),
           CalendarCard(),
           const SizedBox(height: SaqgoSpacing.md),
-          ValueListenableBuilder<bool>(
-            valueListenable: LifeLogStore.hasDemoTrip,
-            builder: (context, hasTrip, _) => Column(
+          ValueListenableBuilder<List<TripRecord>>(
+            valueListenable: LifeLogStore.trips,
+            builder: (context, trips, _) => Column(
               children: [
-                if (!hasTrip)
+                if (trips.isEmpty)
                   EmptyState(
                     icon: 'empty_data',
                     message: l.emptyHistory,
-                    onAction: () => LifeLogStore.setDemoTrip(true),
-                    actionLabel: l.demoWalk,
+                    onAction: () => _push(context, const RecordingPage()),
+                    actionLabel: l.startRecording,
                   )
                 else
-                  TripCard(
-                    onOpen: () => _push(context, const SessionDetailsPage()),
-                  ),
+                  for (final trip in trips)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: SaqgoSpacing.sm),
+                      child: TripCard(
+                        record: trip,
+                        onOpen: () =>
+                            _push(context, SessionDetailsPage(record: trip)),
+                      ),
+                    ),
                 const SizedBox(height: SaqgoSpacing.md),
                 OutlinedButton.icon(
-                  onPressed: hasTrip ? () => _confirmDelete(context) : null,
+                  onPressed: trips.isNotEmpty
+                      ? () => _confirmDelete(context)
+                      : null,
                   icon: const SaqgoIcon('delete', color: SaqgoColors.sos),
                   label: Text(l.deleteHistory),
                 ),
@@ -752,7 +798,7 @@ class HistoryPage extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () async {
-              await LifeLogStore.setDemoTrip(false);
+              await LifeLogStore.clear();
               if (dialogContext.mounted) Navigator.pop(dialogContext);
             },
             child: Text(l.confirmDelete),
@@ -764,7 +810,8 @@ class HistoryPage extends StatelessWidget {
 }
 
 class SessionDetailsPage extends StatelessWidget {
-  const SessionDetailsPage({super.key});
+  const SessionDetailsPage({super.key, required this.record});
+  final TripRecord record;
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -778,9 +825,17 @@ class SessionDetailsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l.demoWalk, style: SaqgoTypography.cardTitle),
+                Text(
+                  MaterialLocalizations.of(
+                    context,
+                  ).formatMediumDate(record.startedAt),
+                  style: SaqgoTypography.cardTitle,
+                ),
                 const SizedBox(height: SaqgoSpacing.xs),
-                Text(l.syntheticTrack, style: SaqgoTypography.body),
+                Text(
+                  '${_durationLabel(record.duration)} · ${record.candidateCount} ${l.candidates.toLowerCase()}',
+                  style: SaqgoTypography.body,
+                ),
               ],
             ),
           ),
@@ -1451,7 +1506,8 @@ class CalendarCard extends StatelessWidget {
 }
 
 class TripCard extends StatelessWidget {
-  const TripCard({super.key, required this.onOpen});
+  const TripCard({super.key, required this.record, required this.onOpen});
+  final TripRecord record;
   final VoidCallback onOpen;
   @override
   Widget build(BuildContext context) {
@@ -1460,8 +1516,12 @@ class TripCard extends StatelessWidget {
       child: ListTile(
         contentPadding: EdgeInsets.zero,
         leading: const SaqgoIcon('route', color: SaqgoColors.blue),
-        title: Text(l.demoWalk),
-        subtitle: Text(l.syntheticTrack),
+        title: Text(
+          MaterialLocalizations.of(context).formatMediumDate(record.startedAt),
+        ),
+        subtitle: Text(
+          '${_durationLabel(record.duration)} · ${record.candidateCount} ${l.candidates.toLowerCase()}',
+        ),
         trailing: const Icon(Icons.chevron_right),
         onTap: onOpen,
       ),
@@ -1512,3 +1572,10 @@ void _push(BuildContext context, Widget page) =>
 void _pushReplacement(BuildContext context, Widget page) => Navigator.of(
   context,
 ).pushReplacement(MaterialPageRoute(builder: (_) => page));
+
+String _durationLabel(Duration duration) {
+  final hours = duration.inHours;
+  final minutes = (duration.inMinutes % 60).toString().padLeft(2, '0');
+  final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+  return hours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
+}

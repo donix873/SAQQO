@@ -163,7 +163,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get recordingPaused => 'Запись на паузе. Данные не собираются.';
 
   @override
-  String get recordingActive => 'Запись идёт в демонстрационном режиме.';
+  String get recordingActive =>
+      'Запись активна. Данные хранятся на этом устройстве.';
 
   @override
   String get tripResult => 'Результат поездки';
