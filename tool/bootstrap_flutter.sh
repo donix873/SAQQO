@@ -2,7 +2,13 @@
 set -euo pipefail
 
 project_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-flutter_root=${FLUTTER_ROOT:-/workspace/.flutter-sdk}
+if [ -n "${FLUTTER_ROOT:-}" ]; then
+  flutter_root="$FLUTTER_ROOT"
+elif command -v flutter >/dev/null 2>&1; then
+  flutter_root=$(CDPATH= cd -- "$(dirname -- "$(command -v flutter)")/.." && pwd)
+else
+  flutter_root=/workspace/.flutter-sdk
+fi
 export PATH="$flutter_root/bin:$PATH"
 
 cd "$project_root"

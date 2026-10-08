@@ -91,7 +91,6 @@ python -m venv .venv
 2. Склонируйте репозиторий, откройте терминал в папке `SAQQO` и укажите расположение Flutter:
 
 ```sh
-export FLUTTER_ROOT=/путь/к/flutter
 bash tool/bootstrap_flutter.sh
 ```
 

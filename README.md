@@ -19,7 +19,6 @@ Flutter MVP мобильной платформы городской мобил�
 ```sh
 git clone https://github.com/donix873/SAQQO.git
 cd SAQQO
-export FLUTTER_ROOT=/путь/к/flutter
 bash tool/bootstrap_flutter.sh
 ```
 
