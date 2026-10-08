@@ -1,0 +1,760 @@
+{
+  "scope": "Design artifacts only; no Android/iOS runtime validation",
+  "checks": [
+    {
+      "check": "RU/KK translation key parity",
+      "passed": true
+    },
+    {
+      "check": "Distinct icon geometries",
+      "passed": true
+    },
+    {
+      "check": "20 independent references",
+      "passed": true
+    },
+    {
+      "check": "S03_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S03_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S03_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S03_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S03_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S03_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S03_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S03_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S03_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S03_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S03_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S03_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S06_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S06_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S06_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S06_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S06_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S06_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S06_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S06_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S06_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S06_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S06_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S06_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S11_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S11_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S11_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S11_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S11_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S11_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S11_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S11_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S11_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S11_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S11_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S11_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S13_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S13_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S13_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S13_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S13_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S13_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S13_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S13_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S13_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S13_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S13_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S13_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "Text within frame (Noto Sans measurement)",
+      "passed": true
+    },
+    {
+      "check": "map separate SVG",
+      "passed": true
+    },
+    {
+      "check": "map PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "map PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "map PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "route separate SVG",
+      "passed": true
+    },
+    {
+      "check": "route PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "route PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "route PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "sensors separate SVG",
+      "passed": true
+    },
+    {
+      "check": "sensors PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "sensors PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "sensors PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "road_risk separate SVG",
+      "passed": true
+    },
+    {
+      "check": "road_risk PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "road_risk PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "road_risk PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "hazards separate SVG",
+      "passed": true
+    },
+    {
+      "check": "hazards PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "hazards PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "hazards PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "layers separate SVG",
+      "passed": true
+    },
+    {
+      "check": "layers PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "layers PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "layers PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "lifelog separate SVG",
+      "passed": true
+    },
+    {
+      "check": "lifelog PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "lifelog PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "lifelog PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "pulse separate SVG",
+      "passed": true
+    },
+    {
+      "check": "pulse PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "pulse PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "pulse PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "sos separate SVG",
+      "passed": true
+    },
+    {
+      "check": "sos PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "sos PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "sos PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "profile separate SVG",
+      "passed": true
+    },
+    {
+      "check": "profile PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "profile PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "profile PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "search separate SVG",
+      "passed": true
+    },
+    {
+      "check": "search PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "search PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "search PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "filter separate SVG",
+      "passed": true
+    },
+    {
+      "check": "filter PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "filter PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "filter PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "locate separate SVG",
+      "passed": true
+    },
+    {
+      "check": "locate PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "locate PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "locate PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "back separate SVG",
+      "passed": true
+    },
+    {
+      "check": "back PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "back PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "back PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "close separate SVG",
+      "passed": true
+    },
+    {
+      "check": "close PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "close PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "close PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "pause separate SVG",
+      "passed": true
+    },
+    {
+      "check": "pause PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "pause PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "pause PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "play separate SVG",
+      "passed": true
+    },
+    {
+      "check": "play PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "play PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "play PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "stop separate SVG",
+      "passed": true
+    },
+    {
+      "check": "stop PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "stop PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "stop PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "calendar separate SVG",
+      "passed": true
+    },
+    {
+      "check": "calendar PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "calendar PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "calendar PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "alert separate SVG",
+      "passed": true
+    },
+    {
+      "check": "alert PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "alert PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "alert PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "settings separate SVG",
+      "passed": true
+    },
+    {
+      "check": "settings PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "settings PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "settings PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "no_internet separate SVG",
+      "passed": true
+    },
+    {
+      "check": "no_internet PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "no_internet PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "no_internet PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "empty_data separate SVG",
+      "passed": true
+    },
+    {
+      "check": "empty_data PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "empty_data PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "empty_data PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "no_gps separate SVG",
+      "passed": true
+    },
+    {
+      "check": "no_gps PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "no_gps PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "no_gps PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "gps_weak separate SVG",
+      "passed": true
+    },
+    {
+      "check": "gps_weak PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "gps_weak PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "gps_weak PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "permission_denied separate SVG",
+      "passed": true
+    },
+    {
+      "check": "permission_denied PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "permission_denied PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "permission_denied PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "demo_mode separate SVG",
+      "passed": true
+    },
+    {
+      "check": "demo_mode PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "demo_mode PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "demo_mode PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "phone separate SVG",
+      "passed": true
+    },
+    {
+      "check": "phone PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "phone PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "phone PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "delete separate SVG",
+      "passed": true
+    },
+    {
+      "check": "delete PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "delete PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "delete PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "privacy separate SVG",
+      "passed": true
+    },
+    {
+      "check": "privacy PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "privacy PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "privacy PNG 3x transparency",
+      "passed": true
+    },
+    {
+      "check": "logo separate SVG",
+      "passed": true
+    },
+    {
+      "check": "logo PNG 1x transparency",
+      "passed": true
+    },
+    {
+      "check": "logo PNG 2x transparency",
+      "passed": true
+    },
+    {
+      "check": "logo PNG 3x transparency",
+      "passed": true
+    }
+  ],
+  "overflow": [],
+  "passed": 188,
+  "failed": 0
+}

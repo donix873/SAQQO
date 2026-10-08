@@ -1,0 +1,12 @@
+__pycache__/
+.venv/
+.DS_Store
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+build/
+coverage/
+android/.gradle/
+ios/Pods/

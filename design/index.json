@@ -1,0 +1,142 @@
+[
+  {
+    "screen": "S03",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S03_ru_ios.png",
+    "source": "exports/S03_ru_ios.svg"
+  },
+  {
+    "screen": "S03",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S03_ru_android.png",
+    "source": "exports/S03_ru_android.svg"
+  },
+  {
+    "screen": "S03",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S03_kk_ios.png",
+    "source": "exports/S03_kk_ios.svg"
+  },
+  {
+    "screen": "S03",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S03_kk_android.png",
+    "source": "exports/S03_kk_android.svg"
+  },
+  {
+    "screen": "S08",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S08_ru_ios.png",
+    "source": "exports/S08_ru_ios.svg"
+  },
+  {
+    "screen": "S08",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S08_ru_android.png",
+    "source": "exports/S08_ru_android.svg"
+  },
+  {
+    "screen": "S08",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S08_kk_ios.png",
+    "source": "exports/S08_kk_ios.svg"
+  },
+  {
+    "screen": "S08",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S08_kk_android.png",
+    "source": "exports/S08_kk_android.svg"
+  },
+  {
+    "screen": "S06",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S06_ru_ios.png",
+    "source": "exports/S06_ru_ios.svg"
+  },
+  {
+    "screen": "S06",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S06_ru_android.png",
+    "source": "exports/S06_ru_android.svg"
+  },
+  {
+    "screen": "S06",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S06_kk_ios.png",
+    "source": "exports/S06_kk_ios.svg"
+  },
+  {
+    "screen": "S06",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S06_kk_android.png",
+    "source": "exports/S06_kk_android.svg"
+  },
+  {
+    "screen": "S11",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S11_ru_ios.png",
+    "source": "exports/S11_ru_ios.svg"
+  },
+  {
+    "screen": "S11",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S11_ru_android.png",
+    "source": "exports/S11_ru_android.svg"
+  },
+  {
+    "screen": "S11",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S11_kk_ios.png",
+    "source": "exports/S11_kk_ios.svg"
+  },
+  {
+    "screen": "S11",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S11_kk_android.png",
+    "source": "exports/S11_kk_android.svg"
+  },
+  {
+    "screen": "S13",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S13_ru_ios.png",
+    "source": "exports/S13_ru_ios.svg"
+  },
+  {
+    "screen": "S13",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S13_ru_android.png",
+    "source": "exports/S13_ru_android.svg"
+  },
+  {
+    "screen": "S13",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S13_kk_ios.png",
+    "source": "exports/S13_kk_ios.svg"
+  },
+  {
+    "screen": "S13",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S13_kk_android.png",
+    "source": "exports/S13_kk_android.svg"
+  }
+]
