@@ -1,5 +1,61 @@
 [
   {
+    "screen": "S01",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S01_ru_ios.png",
+    "source": "exports/S01_ru_ios.svg"
+  },
+  {
+    "screen": "S01",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S01_ru_android.png",
+    "source": "exports/S01_ru_android.svg"
+  },
+  {
+    "screen": "S01",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S01_kk_ios.png",
+    "source": "exports/S01_kk_ios.svg"
+  },
+  {
+    "screen": "S01",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S01_kk_android.png",
+    "source": "exports/S01_kk_android.svg"
+  },
+  {
+    "screen": "S02",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S02_ru_ios.png",
+    "source": "exports/S02_ru_ios.svg"
+  },
+  {
+    "screen": "S02",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S02_ru_android.png",
+    "source": "exports/S02_ru_android.svg"
+  },
+  {
+    "screen": "S02",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S02_kk_ios.png",
+    "source": "exports/S02_kk_ios.svg"
+  },
+  {
+    "screen": "S02",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S02_kk_android.png",
+    "source": "exports/S02_kk_android.svg"
+  },
+  {
     "screen": "S03",
     "locale": "ru",
     "platform": "ios",
@@ -28,32 +84,60 @@
     "source": "exports/S03_kk_android.svg"
   },
   {
-    "screen": "S08",
+    "screen": "S04",
     "locale": "ru",
     "platform": "ios",
-    "image": "exports/S08_ru_ios.png",
-    "source": "exports/S08_ru_ios.svg"
+    "image": "exports/S04_ru_ios.png",
+    "source": "exports/S04_ru_ios.svg"
   },
   {
-    "screen": "S08",
+    "screen": "S04",
     "locale": "ru",
     "platform": "android",
-    "image": "exports/S08_ru_android.png",
-    "source": "exports/S08_ru_android.svg"
+    "image": "exports/S04_ru_android.png",
+    "source": "exports/S04_ru_android.svg"
   },
   {
-    "screen": "S08",
+    "screen": "S04",
     "locale": "kk",
     "platform": "ios",
-    "image": "exports/S08_kk_ios.png",
-    "source": "exports/S08_kk_ios.svg"
+    "image": "exports/S04_kk_ios.png",
+    "source": "exports/S04_kk_ios.svg"
   },
   {
-    "screen": "S08",
+    "screen": "S04",
     "locale": "kk",
     "platform": "android",
-    "image": "exports/S08_kk_android.png",
-    "source": "exports/S08_kk_android.svg"
+    "image": "exports/S04_kk_android.png",
+    "source": "exports/S04_kk_android.svg"
+  },
+  {
+    "screen": "S05",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S05_ru_ios.png",
+    "source": "exports/S05_ru_ios.svg"
+  },
+  {
+    "screen": "S05",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S05_ru_android.png",
+    "source": "exports/S05_ru_android.svg"
+  },
+  {
+    "screen": "S05",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S05_kk_ios.png",
+    "source": "exports/S05_kk_ios.svg"
+  },
+  {
+    "screen": "S05",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S05_kk_android.png",
+    "source": "exports/S05_kk_android.svg"
   },
   {
     "screen": "S06",
@@ -84,6 +168,118 @@
     "source": "exports/S06_kk_android.svg"
   },
   {
+    "screen": "S07",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S07_ru_ios.png",
+    "source": "exports/S07_ru_ios.svg"
+  },
+  {
+    "screen": "S07",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S07_ru_android.png",
+    "source": "exports/S07_ru_android.svg"
+  },
+  {
+    "screen": "S07",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S07_kk_ios.png",
+    "source": "exports/S07_kk_ios.svg"
+  },
+  {
+    "screen": "S07",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S07_kk_android.png",
+    "source": "exports/S07_kk_android.svg"
+  },
+  {
+    "screen": "S08",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S08_ru_ios.png",
+    "source": "exports/S08_ru_ios.svg"
+  },
+  {
+    "screen": "S08",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S08_ru_android.png",
+    "source": "exports/S08_ru_android.svg"
+  },
+  {
+    "screen": "S08",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S08_kk_ios.png",
+    "source": "exports/S08_kk_ios.svg"
+  },
+  {
+    "screen": "S08",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S08_kk_android.png",
+    "source": "exports/S08_kk_android.svg"
+  },
+  {
+    "screen": "S09",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S09_ru_ios.png",
+    "source": "exports/S09_ru_ios.svg"
+  },
+  {
+    "screen": "S09",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S09_ru_android.png",
+    "source": "exports/S09_ru_android.svg"
+  },
+  {
+    "screen": "S09",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S09_kk_ios.png",
+    "source": "exports/S09_kk_ios.svg"
+  },
+  {
+    "screen": "S09",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S09_kk_android.png",
+    "source": "exports/S09_kk_android.svg"
+  },
+  {
+    "screen": "S10",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S10_ru_ios.png",
+    "source": "exports/S10_ru_ios.svg"
+  },
+  {
+    "screen": "S10",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S10_ru_android.png",
+    "source": "exports/S10_ru_android.svg"
+  },
+  {
+    "screen": "S10",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S10_kk_ios.png",
+    "source": "exports/S10_kk_ios.svg"
+  },
+  {
+    "screen": "S10",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S10_kk_android.png",
+    "source": "exports/S10_kk_android.svg"
+  },
+  {
     "screen": "S11",
     "locale": "ru",
     "platform": "ios",
@@ -112,6 +308,34 @@
     "source": "exports/S11_kk_android.svg"
   },
   {
+    "screen": "S12",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S12_ru_ios.png",
+    "source": "exports/S12_ru_ios.svg"
+  },
+  {
+    "screen": "S12",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S12_ru_android.png",
+    "source": "exports/S12_ru_android.svg"
+  },
+  {
+    "screen": "S12",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S12_kk_ios.png",
+    "source": "exports/S12_kk_ios.svg"
+  },
+  {
+    "screen": "S12",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S12_kk_android.png",
+    "source": "exports/S12_kk_android.svg"
+  },
+  {
     "screen": "S13",
     "locale": "ru",
     "platform": "ios",
@@ -138,5 +362,61 @@
     "platform": "android",
     "image": "exports/S13_kk_android.png",
     "source": "exports/S13_kk_android.svg"
+  },
+  {
+    "screen": "S14",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S14_ru_ios.png",
+    "source": "exports/S14_ru_ios.svg"
+  },
+  {
+    "screen": "S14",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S14_ru_android.png",
+    "source": "exports/S14_ru_android.svg"
+  },
+  {
+    "screen": "S14",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S14_kk_ios.png",
+    "source": "exports/S14_kk_ios.svg"
+  },
+  {
+    "screen": "S14",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S14_kk_android.png",
+    "source": "exports/S14_kk_android.svg"
+  },
+  {
+    "screen": "S15",
+    "locale": "ru",
+    "platform": "ios",
+    "image": "exports/S15_ru_ios.png",
+    "source": "exports/S15_ru_ios.svg"
+  },
+  {
+    "screen": "S15",
+    "locale": "ru",
+    "platform": "android",
+    "image": "exports/S15_ru_android.png",
+    "source": "exports/S15_ru_android.svg"
+  },
+  {
+    "screen": "S15",
+    "locale": "kk",
+    "platform": "ios",
+    "image": "exports/S15_kk_ios.png",
+    "source": "exports/S15_kk_ios.svg"
+  },
+  {
+    "screen": "S15",
+    "locale": "kk",
+    "platform": "android",
+    "image": "exports/S15_kk_android.png",
+    "source": "exports/S15_kk_android.svg"
   }
 ]

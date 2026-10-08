@@ -4,7 +4,8 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'sensor_candidate_service.dart';
 
 class SensorSessionService {
-  SensorSessionService({SensorCandidateService? candidateService}) : _candidateService = candidateService ?? SensorCandidateService();
+  SensorSessionService({SensorCandidateService? candidateService})
+    : _candidateService = candidateService ?? SensorCandidateService();
 
   final SensorCandidateService _candidateService;
   StreamSubscription<AccelerometerEvent>? _subscription;
@@ -14,10 +15,18 @@ class SensorSessionService {
 
   Future<void> start() async {
     if (isRecording) return;
-    _subscription = accelerometerEventStream(samplingPeriod: const Duration(milliseconds: 40)).listen((event) {
-      final candidate = _candidateService.addSample(x: event.x, y: event.y, z: event.z, timestamp: DateTime.now());
-      if (candidate != null) _candidates.add(candidate);
-    });
+    _subscription =
+        accelerometerEventStream(
+          samplingPeriod: const Duration(milliseconds: 40),
+        ).listen((event) {
+          final candidate = _candidateService.addSample(
+            x: event.x,
+            y: event.y,
+            z: event.z,
+            timestamp: DateTime.now(),
+          );
+          if (candidate != null) _candidates.add(candidate);
+        });
   }
 
   Future<void> pause() => stop();

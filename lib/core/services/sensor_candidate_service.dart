@@ -9,7 +9,12 @@ class SensorCandidateService {
   final int minSamples;
   final List<double> _window = [];
 
-  VibrationCandidate? addSample({required double x, required double y, required double z, required DateTime timestamp}) {
+  VibrationCandidate? addSample({
+    required double x,
+    required double y,
+    required double z,
+    required DateTime timestamp,
+  }) {
     final magnitude = math.sqrt(x * x + y * y + z * z);
     _window.add(magnitude);
     if (_window.length > 50) _window.removeAt(0);
@@ -17,7 +22,9 @@ class SensorCandidateService {
     final mean = _window.reduce((a, b) => a + b) / _window.length;
     final peak = _window.reduce(math.max);
     if (peak < threshold || peak - mean < 3) return null;
-    final confidence = ((peak - threshold) / threshold).clamp(0.0, 0.6).toDouble();
+    final confidence = ((peak - threshold) / threshold)
+        .clamp(0.0, 0.6)
+        .toDouble();
     _window.clear();
     return VibrationCandidate(timestamp: timestamp, confidence: confidence);
   }

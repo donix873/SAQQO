@@ -10,23 +10,37 @@ void main() {
   }
   var manifest = android.readAsStringSync();
   for (final permission in const [
+    'android.permission.INTERNET',
     'android.permission.ACCESS_FINE_LOCATION',
     'android.permission.ACCESS_COARSE_LOCATION',
   ]) {
     final tag = '<uses-permission android:name="$permission"/>';
-    if (!manifest.contains(permission)) manifest = manifest.replaceFirst('<application', '$tag\n    <application');
+    if (!manifest.contains(permission)) {
+      manifest = manifest.replaceFirst(
+        '<application',
+        '$tag\n    <application',
+      );
+    }
   }
-  manifest = manifest.replaceFirst('android:label="saqgo"', 'android:label="SAQGO"');
+  manifest = manifest.replaceFirst(
+    'android:label="saqgo"',
+    'android:label="SAQGO"',
+  );
   android.writeAsStringSync(manifest);
 
   var plist = ios.readAsStringSync();
   const values = {
-    'NSLocationWhenInUseUsageDescription': 'SAQGO uses your location only when you request a map location or start a voluntary session.',
-    'NSMotionUsageDescription': 'SAQGO reads motion sensors only during a session you explicitly start.',
+    'NSLocationWhenInUseUsageDescription':
+        'SAQGO uses your location only when you request a map location or start a voluntary session.',
+    'NSMotionUsageDescription':
+        'SAQGO reads motion sensors only during a session you explicitly start.',
   };
   for (final entry in values.entries) {
     if (!plist.contains('<key>${entry.key}</key>')) {
-      plist = plist.replaceFirst('</dict>', '  <key>${entry.key}</key>\n  <string>${entry.value}</string>\n</dict>');
+      plist = plist.replaceFirst(
+        '</dict>',
+        '  <key>${entry.key}</key>\n  <string>${entry.value}</string>\n</dict>',
+      );
     }
   }
   ios.writeAsStringSync(plist);

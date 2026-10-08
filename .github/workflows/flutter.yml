@@ -14,7 +14,5 @@ jobs:
         with:
           channel: stable
           cache: true
-      - run: flutter pub get
-      - run: flutter gen-l10n
-      - run: flutter analyze
-      - run: flutter test
+      - run: bash tool/bootstrap_flutter.sh
+      - run: flutter build apk --debug

@@ -55,14 +55,14 @@ XDG_CACHE_HOME=/workspace/.cache /workspace/.saqgo-design-venv/bin/python design
 /workspace/.saqgo-design-venv/bin/python design/validate.py
 ```
 
-`design/validate.py` проверяет 20 первых визуальных экспортов и оригинальные ассеты. `flutter test` проверяет консервативную эвристику сенсорного кандидата; успешный тест не доказывает качество распознавания на реальных дорогах.
+`design/validate.py` проверяет 60 визуальных экспортов и оригинальные ассеты. `flutter test` проверяет консервативную эвристику сенсорного кандидата; успешный тест не доказывает качество распознавания на реальных дорогах.
 
 ## Первый результат: визуальная концепция 01
 
 - `design/moodboard.svg` / `.png`: палитра, типографика, иконки и карта-концепт.
 - `design/overview.png`: обзор пяти эталонных экранов.
 - `design/gallery.html`: локальная галерея с переключением RU/ҚАЗ и iOS/Android.
-- `design/exports/`: 20 самостоятельных PNG 2× и 20 редактируемых SVG (5 × 2 языка × 2 платформы).
+- `design/exports/`: 60 самостоятельных PNG 2× и 60 редактируемых SVG (15 × 2 языка × 2 платформы).
 - `assets/icons/`: оригинальные отдельные SVG и прозрачные PNG 1×/2×/3×; `assets/assets_manifest.csv` — происхождение и лицензия.
 - `assets/branding/`: самостоятельные app icon 1024×1024 и splash-символ в SVG/PNG.
 

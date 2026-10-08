@@ -10,7 +10,103 @@
       "passed": true
     },
     {
-      "check": "20 independent references",
+      "check": "60 independent references",
+      "passed": true
+    },
+    {
+      "check": "S01_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S01_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S01_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S01_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S01_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S01_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S01_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S01_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S01_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S01_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S01_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S01_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S02_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S02_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S02_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S02_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S02_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S02_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S02_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S02_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S02_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S02_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S02_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S02_kk_android demo disclosure",
       "passed": true
     },
     {
@@ -62,51 +158,99 @@
       "passed": true
     },
     {
-      "check": "S08_ru_ios frame size",
+      "check": "S04_ru_ios frame size",
       "passed": true
     },
     {
-      "check": "S08_ru_ios PNG size",
+      "check": "S04_ru_ios PNG size",
       "passed": true
     },
     {
-      "check": "S08_ru_ios demo disclosure",
+      "check": "S04_ru_ios demo disclosure",
       "passed": true
     },
     {
-      "check": "S08_ru_android frame size",
+      "check": "S04_ru_android frame size",
       "passed": true
     },
     {
-      "check": "S08_ru_android PNG size",
+      "check": "S04_ru_android PNG size",
       "passed": true
     },
     {
-      "check": "S08_ru_android demo disclosure",
+      "check": "S04_ru_android demo disclosure",
       "passed": true
     },
     {
-      "check": "S08_kk_ios frame size",
+      "check": "S04_kk_ios frame size",
       "passed": true
     },
     {
-      "check": "S08_kk_ios PNG size",
+      "check": "S04_kk_ios PNG size",
       "passed": true
     },
     {
-      "check": "S08_kk_ios demo disclosure",
+      "check": "S04_kk_ios demo disclosure",
       "passed": true
     },
     {
-      "check": "S08_kk_android frame size",
+      "check": "S04_kk_android frame size",
       "passed": true
     },
     {
-      "check": "S08_kk_android PNG size",
+      "check": "S04_kk_android PNG size",
       "passed": true
     },
     {
-      "check": "S08_kk_android demo disclosure",
+      "check": "S04_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S05_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S05_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S05_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S05_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S05_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S05_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S05_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S05_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S05_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S05_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S05_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S05_kk_android demo disclosure",
       "passed": true
     },
     {
@@ -158,6 +302,198 @@
       "passed": true
     },
     {
+      "check": "S07_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S07_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S07_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S07_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S07_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S07_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S07_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S07_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S07_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S07_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S07_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S07_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S08_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S08_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S09_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S09_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S09_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S09_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S09_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S09_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S09_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S09_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S09_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S09_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S09_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S09_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S10_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S10_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S10_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S10_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S10_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S10_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S10_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S10_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S10_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S10_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S10_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S10_kk_android demo disclosure",
+      "passed": true
+    },
+    {
       "check": "S11_ru_ios frame size",
       "passed": true
     },
@@ -206,6 +542,54 @@
       "passed": true
     },
     {
+      "check": "S12_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S12_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S12_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S12_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S12_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S12_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S12_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S12_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S12_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S12_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S12_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S12_kk_android demo disclosure",
+      "passed": true
+    },
+    {
       "check": "S13_ru_ios frame size",
       "passed": true
     },
@@ -251,6 +635,102 @@
     },
     {
       "check": "S13_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S14_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S14_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S14_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S14_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S14_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S14_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S14_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S14_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S14_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S14_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S14_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S14_kk_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S15_ru_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S15_ru_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S15_ru_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S15_ru_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S15_ru_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S15_ru_android demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S15_kk_ios frame size",
+      "passed": true
+    },
+    {
+      "check": "S15_kk_ios PNG size",
+      "passed": true
+    },
+    {
+      "check": "S15_kk_ios demo disclosure",
+      "passed": true
+    },
+    {
+      "check": "S15_kk_android frame size",
+      "passed": true
+    },
+    {
+      "check": "S15_kk_android PNG size",
+      "passed": true
+    },
+    {
+      "check": "S15_kk_android demo disclosure",
       "passed": true
     },
     {
@@ -755,6 +1235,6 @@
     }
   ],
   "overflow": [],
-  "passed": 188,
+  "passed": 308,
   "failed": 0
 }

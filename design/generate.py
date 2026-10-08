@@ -246,6 +246,28 @@ def screen(sid,locale,platform):
    c.rect(24,519+i*39,24,24,'#203A50',8);c.text(36,536+i*39,i+1,11,CYAN,600,'middle');c.text(60,536+i*39,step,10,WHITE)
   c.rect(24,654,w-48,66,PANEL,16,LINE);c.text(40,680,t['ble'],11,WHITE,500);c.text(40,703,t['ble_note'],10,MUTED)
   c.text(24,740,t['auto'],10,MUTED);nav(c,t,'')
+ else:
+  # Remaining S01–S15 screens use the same real component system, not a shared image.
+  titles={'S01':t['language'] if 'language' in t else 'Тіл / Язык','S02':'SAQGO','S04':t['layers'],'S05':t['hazards'],'S07':t['timeline'],'S09':t['route'],'S10':t['pulse'],'S12':t['timeline'],'S14':t['settings'],'S15':'Admin'}
+  icons={'S01':'logo','S02':'privacy','S04':'layers','S05':'hazards','S07':'route','S09':'route','S10':'pulse','S12':'lifelog','S14':'settings','S15':'profile'}
+  header(c,titles[sid],t['demo'] if sid not in ['S01','S02','S14'] else t['local'])
+  c.rect(24,142,w-48,114,PANEL,20,LINE);c.icon(icons[sid],40,166,32,BLUE);c.text(84,180,titles[sid],18,WHITE,600);c.text(84,207,t['synthetic'] if sid not in ['S01','S02','S14'] else t['local'],11,MUTED)
+  if sid in ['S05','S07','S09','S12']:
+   demo_map(c,24,278,w-48,210,True);c.badge(36,291,t['synthetic'])
+  elif sid=='S10':
+   for yy in range(0,3):
+    for xx in range(0,4):c.rect(30+xx*((w-76)/4),285+yy*70,(w-100)/4,52,'#203A50' if (xx+yy)%3==0 else PANEL,12)
+   c.text(24,515,t['pulse'],17,WHITE,600);c.text(24,541,t['synthetic'],11,MUTED)
+  elif sid=='S01':
+   c.text(w/2,330,'SAQGO',34,WHITE,700,'middle');c.rect(24,390,w-48,52,PANEL,16,LINE);c.text(w/2,423,'Қазақша',15,WHITE,600,'middle');c.rect(24,454,w-48,52,PANEL,16,LINE);c.text(w/2,487,'Русский',15,WHITE,600,'middle')
+  elif sid=='S02':
+   for i,(ic,label) in enumerate([('hazards',t['hazards']),('privacy',t['local']),('no_gps',t['gps'])]):
+    yy=285+i*74;c.rect(24,yy,w-48,62,PANEL,16,LINE);c.icon(ic,40,yy+19,24,BLUE);c.text(78,yy+36,label,13,WHITE,500)
+  else:
+   for i,(ic,label) in enumerate([('privacy',t['local']),('no_gps',t['gps']),('alert',t['demo'])]):
+    yy=285+i*74;c.rect(24,yy,w-48,62,PANEL,16,LINE);c.icon(ic,40,yy+19,24,BLUE);c.text(78,yy+36,label,13,WHITE,500)
+  c.button(h-180,t['continue'] if 'continue' in t else t['start'],'play')
+  nav(c,t,'settings' if sid in ['S14','S15'] else 'map')
  return c
 
 def generate():
@@ -267,7 +289,7 @@ def generate():
    writer.writerow(['saqgo_app_icon','Original SAQGO vector geometry','SVG + PNG','1024px','MIT (see LICENSE)','app icon'])
    writer.writerow(['saqgo_splash_symbol','Original SAQGO vector geometry','SVG + PNG','1024px','MIT (see LICENSE)','splash symbol'])
  index=[]
- for sid in ['S03','S08','S06','S11','S13']:
+ for sid in ['S01','S02','S03','S04','S05','S06','S07','S08','S09','S10','S11','S12','S13','S14','S15']:
   for lang in COPY:
    for platform in ['ios','android']:
     name=f'{sid}_{lang}_{platform}';screen(sid,lang,platform).save(OUT/f'{name}.svg')

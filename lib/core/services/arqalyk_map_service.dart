@@ -14,7 +14,14 @@ class ArqalykMapService {
   });
 
   Future<LatLng?> resolveCity() async {
-    final response = await http.get(_uri, headers: const {'User-Agent': 'SAQGO-MVP/0.1 contact: repository-owner'}).timeout(const Duration(seconds: 10));
+    final response = await http
+        .get(
+          _uri,
+          headers: const {
+            'User-Agent': 'SAQGO-MVP/0.1 contact: repository-owner',
+          },
+        )
+        .timeout(const Duration(seconds: 10));
     if (response.statusCode != 200) return null;
     final data = jsonDecode(response.body) as List<dynamic>;
     if (data.isEmpty) return null;

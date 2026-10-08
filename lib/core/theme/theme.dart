@@ -11,7 +11,11 @@ ThemeData saqgoTheme() => ThemeData(
     surface: SaqgoColors.surface,
     error: SaqgoColors.sos,
   ),
-  appBarTheme: const AppBarTheme(backgroundColor: SaqgoColors.navy, foregroundColor: SaqgoColors.text, elevation: 0),
+  appBarTheme: const AppBarTheme(
+    backgroundColor: SaqgoColors.navy,
+    foregroundColor: SaqgoColors.text,
+    elevation: 0,
+  ),
   dividerColor: SaqgoColors.line,
   snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
 );

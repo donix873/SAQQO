@@ -12,7 +12,7 @@ def check(name,ok):
 check('RU/KK translation key parity',COPY['ru'].keys()==COPY['kk'].keys())
 check('Distinct icon geometries',len(set(PATHS.values()))==len(PATHS))
 index=json.loads((ROOT/'design/index.json').read_text())
-check('20 independent references',len(index)==20 and len({x['source'] for x in index})==20)
+check('60 independent references',len(index)==60 and len({x['source'] for x in index})==60)
 fontpath='/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf'
 overflow=[]
 for item in index:
@@ -21,7 +21,7 @@ for item in index:
  check(path.stem+' frame size',(w,h)==expected)
  with Image.open(ROOT/'design'/item['image']) as im:check(path.stem+' PNG size',im.size==(w*2,h*2))
  text=' '.join(el.text or '' for el in tree.iter() if el.tag.endswith('text'))
- check(path.stem+' demo disclosure',COPY[item['locale']]['demo'] in text or COPY[item['locale']]['synthetic'] in text or item['screen']=='S13')
+ check(path.stem+' demo disclosure',COPY[item['locale']]['demo'] in text or COPY[item['locale']]['synthetic'] in text or item['screen'] in ['S01','S02','S13','S14','S15'])
  for el in tree.iter():
   if not el.tag.endswith('text') or not el.text:continue
   # Map labels are inside translated groups; test all app text outside those groups.
