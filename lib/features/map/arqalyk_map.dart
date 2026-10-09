@@ -93,11 +93,16 @@ class _ArqalykMapState extends State<ArqalykMap> {
   @override
   Widget build(BuildContext context) {
     final route = _route;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(SaqgoRadii.card),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFFE9F0F6),
+        borderRadius: BorderRadius.circular(SaqgoRadii.card),
+      ),
+      // Do not clip the Android platform view: clipping it can leave black
+      // checkerboard tiles on some Android GPU/Flutter combinations.
       child: YandexMap(
-        nightModeEnabled: true,
-        mapType: MapType.vector,
+        nightModeEnabled: false,
+        mapType: MapType.map,
         logoPadding: const MapPadding(horizontal: 10, vertical: 10),
         onMapCreated: _onMapCreated,
         mapObjects: [
@@ -106,9 +111,9 @@ class _ArqalykMapState extends State<ArqalykMap> {
               mapId: const MapObjectId('selected-route'),
               polyline: Polyline(points: route),
               zIndex: 3,
-              strokeColor: const Color(0xFF57B8FF),
+              strokeColor: const Color(0xFF0577E6),
               strokeWidth: 6,
-              outlineColor: const Color(0x99102136),
+              outlineColor: const Color(0x990A3866),
               outlineWidth: 2,
               isInnerOutlineEnabled: true,
             ),
