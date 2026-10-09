@@ -61,6 +61,12 @@ class _SaqgoAppState extends State<SaqgoApp> {
     );
   }
 
+  Future<void> _restartFirstRun() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove('saqgo_locale');
+    if (mounted) setState(() => _stage = 0);
+  }
+
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'SAQGO',
@@ -80,7 +86,11 @@ class _SaqgoAppState extends State<SaqgoApp> {
         onStarted: () => setState(() => _stage = 1),
       ),
       1 => OnboardingPage(onFinished: () => setState(() => _stage = 2)),
-      _ => HomeShell(locale: _locale, onLocaleChanged: _setLocale),
+      _ => HomeShell(
+        locale: _locale,
+        onLocaleChanged: _setLocale,
+        onRestartFirstRun: _restartFirstRun,
+      ),
     },
   );
 }
@@ -143,9 +153,34 @@ class LanguagePage extends StatelessWidget {
   }
 }
 
-class OnboardingPage extends StatelessWidget {
+class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key, required this.onFinished});
   final VoidCallback onFinished;
+
+  @override
+  State<OnboardingPage> createState() => _OnboardingPageState();
+}
+
+class _OnboardingPageState extends State<OnboardingPage> {
+  var _requestingLocation = false;
+  String? _locationMessage;
+
+  Future<void> _enableLocation() async {
+    setState(() {
+      _requestingLocation = true;
+      _locationMessage = null;
+    });
+    final result = await LocationService().requestCurrentLocation();
+    if (!mounted) return;
+    setState(() => _requestingLocation = false);
+    if (result is LocationAvailable) {
+      widget.onFinished();
+      return;
+    }
+    setState(
+      () => _locationMessage = AppLocalizations.of(context)!.gpsDisabled,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -190,8 +225,24 @@ class OnboardingPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: SaqgoSpacing.md),
+              FilledButton.icon(
+                onPressed: _requestingLocation ? null : _enableLocation,
+                style: _buttonStyle(),
+                icon: _requestingLocation
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const SaqgoIcon('locate', color: SaqgoColors.navy),
+                label: Text(l.enableLocation),
+              ),
+              if (_locationMessage != null) ...[
+                const SizedBox(height: SaqgoSpacing.sm),
+                Text(_locationMessage!, style: SaqgoTypography.body),
+              ],
+              const SizedBox(height: SaqgoSpacing.sm),
               FilledButton(
-                onPressed: onFinished,
+                onPressed: widget.onFinished,
                 style: _buttonStyle(),
                 child: Text(l.skip),
               ),
@@ -208,9 +259,11 @@ class HomeShell extends StatefulWidget {
     super.key,
     required this.locale,
     required this.onLocaleChanged,
+    required this.onRestartFirstRun,
   });
   final Locale locale;
   final ValueChanged<Locale> onLocaleChanged;
+  final Future<void> Function() onRestartFirstRun;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -231,6 +284,7 @@ class _HomeShellState extends State<HomeShell> {
       SettingsPage(
         locale: widget.locale,
         onLocaleChanged: widget.onLocaleChanged,
+        onRestartFirstRun: widget.onRestartFirstRun,
       ),
     ];
     return Scaffold(
@@ -1311,9 +1365,11 @@ class SettingsPage extends StatefulWidget {
     super.key,
     required this.locale,
     required this.onLocaleChanged,
+    required this.onRestartFirstRun,
   });
   final Locale locale;
   final ValueChanged<Locale> onLocaleChanged;
+  final Future<void> Function() onRestartFirstRun;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -1407,6 +1463,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: SaqgoSpacing.md),
+          OutlinedButton.icon(
+            onPressed: () async {
+              await widget.onRestartFirstRun();
+            },
+            icon: const Icon(Icons.restart_alt_rounded),
+            label: Text(l.restartFirstRun),
           ),
           const SizedBox(height: SaqgoSpacing.md),
           OutlinedButton.icon(

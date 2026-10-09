@@ -31,6 +31,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get skip => 'Продолжить без геолокации';
 
   @override
+  String get enableLocation => 'Включить геолокацию';
+
+  @override
+  String get restartFirstRun => 'Пройти начальную настройку заново';
+
+  @override
   String get welcomeTitle => 'Город рядом. Решения — осознанно.';
 
   @override

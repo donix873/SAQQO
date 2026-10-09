@@ -31,6 +31,12 @@ class AppLocalizationsKk extends AppLocalizations {
   String get skip => 'Геолокациясыз жалғастыру';
 
   @override
+  String get enableLocation => 'Геолокацияны қосу';
+
+  @override
+  String get restartFirstRun => 'Бастапқы баптаудан қайта өту';
+
+  @override
   String get welcomeTitle => 'Қала жақын. Шешім — саналы.';
 
   @override

@@ -18,6 +18,7 @@
         let map;
         let loading;
         let latest;
+        let yandexRoute;
 
         function showStatus(text) {
           status.textContent = text;
@@ -51,9 +52,33 @@
           map.geoObjects.removeAll();
           const route = data.route || [];
           if (route.length > 1) {
-            const line = new window.ymaps.Polyline(route, {}, { strokeColor: '#0577E6', strokeWidth: 6, strokeOpacity: 0.9 });
-            map.geoObjects.add(line);
-            map.setBounds(line.geometry.getBounds(), { checkZoomRange: true, zoomMargin: 32 });
+            const drawFallbackLine = () => {
+              const line = new window.ymaps.Polyline(route, {}, { strokeColor: '#0577E6', strokeWidth: 6, strokeOpacity: 0.9 });
+              map.geoObjects.add(line);
+              map.setBounds(line.geometry.getBounds(), { checkZoomRange: true, zoomMargin: 32 });
+            };
+            if (!window.ymaps.multiRouter) {
+              drawFallbackLine();
+              return;
+            }
+            // Build the visible route with Yandex, rather than drawing the
+            // fallback provider's line. It also asks for up to three routes.
+            yandexRoute = new window.ymaps.multiRouter.MultiRoute({
+              referencePoints: [route[0], route[route.length - 1]],
+              params: { routingMode: 'auto', results: 3 }
+            }, {
+              boundsAutoApply: true,
+              wayPointVisible: true,
+              routeActiveStrokeColor: '#0577E6',
+              routeActiveStrokeWidth: 6,
+              routeStrokeColor: '#8798ad',
+              routeStrokeWidth: 4
+            });
+            map.geoObjects.add(yandexRoute);
+            yandexRoute.model.events.add('requestfail', () => {
+              map.geoObjects.remove(yandexRoute);
+              drawFallbackLine();
+            });
           } else {
             map.setCenter(center, 15);
           }

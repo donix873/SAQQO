@@ -140,6 +140,18 @@ abstract class AppLocalizations {
   /// **'Продолжить без геолокации'**
   String get skip;
 
+  /// No description provided for @enableLocation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Включить геолокацию'**
+  String get enableLocation;
+
+  /// No description provided for @restartFirstRun.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пройти начальную настройку заново'**
+  String get restartFirstRun;
+
   /// No description provided for @welcomeTitle.
   ///
   /// In ru, this message translates to:
