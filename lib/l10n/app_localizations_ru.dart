@@ -198,6 +198,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get routeReady => 'Маршрут построен';
 
   @override
+  String get alternativeRoute => 'Альтернативный маршрут';
+
+  @override
   String get routeUnavailable =>
       'Не удалось построить маршрут. Проверьте точки и интернет.';
 

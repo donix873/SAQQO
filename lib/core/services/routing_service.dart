@@ -56,37 +56,49 @@ class RoutingService {
     required LatLng from,
     required LatLng to,
   }) async {
+    final routes = await buildRoutes(from: from, to: to);
+    return routes.isEmpty ? null : routes.first;
+  }
+
+  Future<List<RouteResult>> buildRoutes({
+    required LatLng from,
+    required LatLng to,
+  }) async {
     final path =
         '/route/v1/driving/${from.longitude},${from.latitude};${to.longitude},${to.latitude}';
     final uri = Uri.https('router.project-osrm.org', path, {
       'overview': 'full',
       'geometries': 'geojson',
-      'alternatives': 'false',
+      'alternatives': 'true',
     });
     final response = await http
         .get(uri, headers: _headers)
         .timeout(const Duration(seconds: 15));
-    if (response.statusCode != 200) return null;
+    if (response.statusCode != 200) return const [];
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final routes = data['routes'] as List<dynamic>?;
-    if (routes == null || routes.isEmpty) return null;
-    final route = routes.first as Map<String, dynamic>;
-    final coordinates =
-        ((route['geometry'] as Map<String, dynamic>)['coordinates']
-                as List<dynamic>)
-            .cast<List<dynamic>>();
-    final points = coordinates
-        .map(
-          (coordinate) => LatLng(
-            (coordinate[1] as num).toDouble(),
-            (coordinate[0] as num).toDouble(),
-          ),
-        )
+    if (routes == null || routes.isEmpty) return const [];
+    return routes
+        .map((rawRoute) {
+          final route = rawRoute as Map<String, dynamic>;
+          final coordinates =
+              ((route['geometry'] as Map<String, dynamic>)['coordinates']
+                      as List<dynamic>)
+                  .cast<List<dynamic>>();
+          final points = coordinates
+              .map(
+                (coordinate) => LatLng(
+                  (coordinate[1] as num).toDouble(),
+                  (coordinate[0] as num).toDouble(),
+                ),
+              )
+              .toList(growable: false);
+          return RouteResult(
+            points: points,
+            distanceMeters: (route['distance'] as num).toDouble(),
+            duration: Duration(seconds: (route['duration'] as num).round()),
+          );
+        })
         .toList(growable: false);
-    return RouteResult(
-      points: points,
-      distanceMeters: (route['distance'] as num).toDouble(),
-      duration: Duration(seconds: (route['duration'] as num).round()),
-    );
   }
 }

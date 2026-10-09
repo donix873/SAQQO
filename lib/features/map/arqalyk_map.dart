@@ -30,15 +30,18 @@ class _ArqalykMapState extends State<ArqalykMap> {
     }
     if (widget.routePoints.length > 1 &&
         widget.routePoints != oldWidget.routePoints) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _mapController.fitCamera(
-          CameraFit.bounds(
-            bounds: LatLngBounds.fromPoints(widget.routePoints),
-            padding: const EdgeInsets.all(42),
-          ),
-        );
-      });
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fitRoute());
     }
+  }
+
+  void _fitRoute() {
+    if (widget.routePoints.length < 2) return;
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: LatLngBounds.fromPoints(widget.routePoints),
+        padding: const EdgeInsets.all(42),
+      ),
+    );
   }
 
   @override
@@ -55,7 +58,13 @@ class _ArqalykMapState extends State<ArqalykMap> {
           borderRadius: BorderRadius.circular(SaqgoRadii.card),
           child: FlutterMap(
             mapController: _mapController,
-            options: MapOptions(initialCenter: city, initialZoom: 13),
+            options: MapOptions(
+              initialCenter: widget.routePoints.isEmpty
+                  ? city
+                  : widget.routePoints.first,
+              initialZoom: widget.routePoints.isEmpty ? 13 : 14,
+              onMapReady: _fitRoute,
+            ),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',

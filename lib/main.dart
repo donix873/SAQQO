@@ -557,6 +557,7 @@ class _RecordingPageState extends State<RecordingPage> {
       distanceMeters: track.distanceMeters,
       trackPointCount: track.points.length,
     );
+    await LifeLogStore.add(record);
     if (mounted) _pushReplacement(context, TripResultPage(record: record));
   }
 
@@ -733,7 +734,8 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
   final _routing = RoutingService();
   PlaceResult? _from;
   PlaceResult? _to;
-  RouteResult? _route;
+  List<RouteResult> _routes = const [];
+  var _selectedRoute = 0;
   var _loading = false;
 
   @override
@@ -755,7 +757,7 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
           position: LatLng(location.latitude, location.longitude),
         );
         _fromController.text = _from!.name;
-        _route = null;
+        _routes = const [];
       });
     } else {
       _showMessage(AppLocalizations.of(context)!.gpsDisabled);
@@ -778,7 +780,7 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
           _to = place;
         }
         controller.text = place.name;
-        _route = null;
+        _routes = const [];
       });
     }
     if (mounted) setState(() => _loading = false);
@@ -791,16 +793,17 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
       return;
     }
     setState(() => _loading = true);
-    final route = await _routing.buildRoute(
+    final routes = await _routing.buildRoutes(
       from: _from!.position,
       to: _to!.position,
     );
     if (!mounted) return;
     setState(() {
       _loading = false;
-      _route = route;
+      _routes = routes;
+      _selectedRoute = 0;
     });
-    _showMessage(route == null ? l.routeUnavailable : l.routeReady);
+    _showMessage(routes.isEmpty ? l.routeUnavailable : l.routeReady);
   }
 
   void _showMessage(String message) => ScaffoldMessenger.of(
@@ -864,15 +867,23 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
           const SizedBox(height: SaqgoSpacing.md),
           SizedBox(
             height: 220,
-            child: ArqalykMap(routePoints: _route?.points ?? const []),
+            child: ArqalykMap(
+              routePoints: _routes.isEmpty
+                  ? const []
+                  : _routes[_selectedRoute].points,
+            ),
           ),
           const SizedBox(height: SaqgoSpacing.md),
-          if (_route != null)
-            RouteChoice(
-              title: l.routeReady,
-              duration: _durationLabel(_route!.duration),
-              distance: _distanceLabel(_route!.distanceMeters),
-              selected: true,
+          for (var index = 0; index < _routes.length; index++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: SaqgoSpacing.sm),
+              child: RouteChoice(
+                title: index == 0 ? l.faster : l.alternativeRoute,
+                duration: _durationLabel(_routes[index].duration),
+                distance: _distanceLabel(_routes[index].distanceMeters),
+                selected: _selectedRoute == index,
+                onTap: () => setState(() => _selectedRoute = index),
+              ),
             ),
           const SizedBox(height: SaqgoSpacing.md),
           Text(l.routeSource, style: SaqgoTypography.body),
@@ -880,10 +891,10 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
           Text(l.riskDisclaimer, style: SaqgoTypography.body),
           const SizedBox(height: SaqgoSpacing.md),
           FilledButton.icon(
-            onPressed: _route == null
+            onPressed: _routes.isEmpty
                 ? null
                 : () {
-                    final route = _route!;
+                    final route = _routes[_selectedRoute];
                     if (widget.onNavigate != null) {
                       widget.onNavigate!(route);
                     } else {
@@ -899,9 +910,51 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
   }
 }
 
-class NavigationPage extends StatelessWidget {
+class NavigationPage extends StatefulWidget {
   const NavigationPage({super.key, required this.route});
   final RouteResult route;
+
+  @override
+  State<NavigationPage> createState() => _NavigationPageState();
+}
+
+class _NavigationPageState extends State<NavigationPage> {
+  StreamSubscription<LocationAvailable>? _locationSubscription;
+  LatLng? _userLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_startPositionTracking());
+  }
+
+  @override
+  void dispose() {
+    _locationSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _startPositionTracking() async {
+    final service = LocationService();
+    final current = await service.requestCurrentLocation();
+    if (!mounted) return;
+    if (current is LocationAvailable) {
+      _setPosition(current);
+      _locationSubscription = service.positionUpdates().listen(
+        _setPosition,
+        onError: (_) {},
+      );
+    }
+  }
+
+  void _setPosition(LocationAvailable location) {
+    if (mounted) {
+      setState(
+        () => _userLocation = LatLng(location.latitude, location.longitude),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -910,7 +963,12 @@ class NavigationPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: ArqalykMap(routePoints: route.points)),
+          Expanded(
+            child: ArqalykMap(
+              routePoints: widget.route.points,
+              userLocation: _userLocation,
+            ),
+          ),
           const SizedBox(height: SaqgoSpacing.md),
           GlassCard(
             child: Column(
@@ -1759,30 +1817,37 @@ class RouteChoice extends StatelessWidget {
     required this.duration,
     required this.distance,
     this.selected = false,
+    this.onTap,
   });
   final String title, duration, distance;
   final bool selected;
+  final VoidCallback? onTap;
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(SaqgoSpacing.md),
-    decoration: BoxDecoration(
-      border: Border.all(color: selected ? SaqgoColors.blue : SaqgoColors.line),
-      borderRadius: BorderRadius.circular(SaqgoRadii.control),
-      color: SaqgoColors.surface,
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: SaqgoTypography.cardTitle),
-              Text(distance, style: SaqgoTypography.label),
-            ],
-          ),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.all(SaqgoSpacing.md),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: selected ? SaqgoColors.blue : SaqgoColors.line,
         ),
-        Text(duration, style: SaqgoTypography.cardTitle),
-      ],
+        borderRadius: BorderRadius.circular(SaqgoRadii.control),
+        color: SaqgoColors.surface,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: SaqgoTypography.cardTitle),
+                Text(distance, style: SaqgoTypography.label),
+              ],
+            ),
+          ),
+          Text(duration, style: SaqgoTypography.cardTitle),
+        ],
+      ),
     ),
   );
 }

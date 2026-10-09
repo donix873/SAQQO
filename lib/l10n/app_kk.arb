@@ -61,6 +61,7 @@
   "buildRoute": "Бағыт құру",
   "enterStartAndEnd": "Бастапқы және соңғы нүктелерді көрсетіңіз",
   "routeReady": "Бағыт құрылды",
+  "alternativeRoute": "Балама бағыт",
   "routeUnavailable": "Бағытты құру мүмкін болмады. Нүктелер мен интернетті тексеріңіз.",
   "routeSource": "Бағыт: OpenStreetMap / OSRM",
   "from": "Қайдан",

@@ -464,6 +464,12 @@ abstract class AppLocalizations {
   /// **'Маршрут построен'**
   String get routeReady;
 
+  /// No description provided for @alternativeRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Альтернативный маршрут'**
+  String get alternativeRoute;
+
   /// No description provided for @routeUnavailable.
   ///
   /// In ru, this message translates to:

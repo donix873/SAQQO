@@ -61,6 +61,7 @@
   "buildRoute": "Построить маршрут",
   "enterStartAndEnd": "Укажите начальную и конечную точки",
   "routeReady": "Маршрут построен",
+  "alternativeRoute": "Альтернативный маршрут",
   "routeUnavailable": "Не удалось построить маршрут. Проверьте точки и интернет.",
   "routeSource": "Маршрут: OpenStreetMap / OSRM",
   "from": "Откуда",

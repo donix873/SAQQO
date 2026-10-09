@@ -61,6 +61,7 @@ class LifeLogStore {
   }
 
   static Future<void> add(TripRecord trip) async {
+    if (trips.value.any((saved) => saved.id == trip.id)) return;
     trips.value = [trip, ...trips.value];
     await _persist();
   }

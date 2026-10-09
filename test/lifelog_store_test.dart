@@ -32,5 +32,8 @@ void main() {
 
     expect(LifeLogStore.trips.value.map((trip) => trip.id), ['newer', 'older']);
     expect(LifeLogStore.trips.value.first.candidateCount, 2);
+
+    await LifeLogStore.add(LifeLogStore.trips.value.first);
+    expect(LifeLogStore.trips.value, hasLength(2));
   });
 }

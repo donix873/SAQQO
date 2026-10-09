@@ -22,7 +22,8 @@ class LocationService {
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 12),
         ),
       );
       return LocationResult.available(
@@ -31,6 +32,14 @@ class LocationService {
         accuracyMeters: position.accuracy,
       );
     } catch (_) {
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) {
+        return LocationResult.available(
+          latitude: lastKnown.latitude,
+          longitude: lastKnown.longitude,
+          accuracyMeters: lastKnown.accuracy,
+        );
+      }
       return const LocationResult.unavailable();
     }
   }
@@ -38,8 +47,8 @@ class LocationService {
   Stream<LocationAvailable> positionUpdates() =>
       Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          distanceFilter: 4,
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 3,
         ),
       ).map(
         (position) => LocationAvailable(

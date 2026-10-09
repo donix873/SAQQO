@@ -198,6 +198,9 @@ class AppLocalizationsKk extends AppLocalizations {
   String get routeReady => 'Бағыт құрылды';
 
   @override
+  String get alternativeRoute => 'Балама бағыт';
+
+  @override
   String get routeUnavailable =>
       'Бағытты құру мүмкін болмады. Нүктелер мен интернетті тексеріңіз.';
 
