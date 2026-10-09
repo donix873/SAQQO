@@ -4,9 +4,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:yandex_maps_mapkit_lite/mapkit.dart' as yandex;
 import 'package:yandex_maps_mapkit_lite/yandex_map.dart' as yandex_ui;
 
+import '../../core/services/mapkit_initializer.dart';
 import '../../core/theme/radii.dart';
-
-const _mapkitApiKey = String.fromEnvironment('YANDEX_MAPKIT_API_KEY');
 
 /// Uses the official Yandex MapKit SDK on Android/iOS when its restricted
 /// mobile key is supplied. OpenStreetMap remains a non-secret fallback for
@@ -32,7 +31,7 @@ class _ArqalykMapState extends State<ArqalykMap> {
   yandex.MapWindow? _mapWindow;
   yandex.MapObjectCollection? _mapObjects;
 
-  bool get _usesYandex => _mapkitApiKey.isNotEmpty;
+  bool get _usesYandex => isMapkitReady;
 
   List<yandex.Point> get _yandexRoute => widget.routePoints
       .map(
