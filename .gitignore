@@ -9,6 +9,7 @@ android/local.properties
 .flutter-plugins-dependencies
 .packages
 .pub-cache/
+.tool-cache/
 build/
 coverage/
 server/.env
