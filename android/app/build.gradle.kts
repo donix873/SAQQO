@@ -4,6 +4,15 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// The key is injected only while building (YANDEX_MAPKIT_API_KEY) and is never
+// stored in the repository. A mobile map key is necessarily packaged into an
+// APK, so it should be restricted in the Yandex developer console.
+val yandexMapKitApiKey = providers.environmentVariable("YANDEX_MAPKIT_API_KEY")
+    .orNull
+    .orEmpty()
+    .replace("\\", "\\\\")
+    .replace("\"", "\\\"")
+
 android {
     namespace = "kz.saqgo.saqgo"
     compileSdk = flutter.compileSdkVersion
@@ -19,7 +28,8 @@ android {
         applicationId = "kz.saqgo.saqgo"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Yandex MapKit supports Android 8.0 (API 26) and newer.
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
@@ -27,6 +37,15 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        buildConfigField(
+            "String",
+            "YANDEX_MAPKIT_API_KEY",
+            "\"$yandexMapKitApiKey\"",
+        )
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -46,4 +65,8 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation("com.yandex.android:maps.mobile:4.39.1-lite")
 }
