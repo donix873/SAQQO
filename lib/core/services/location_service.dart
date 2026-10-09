@@ -28,6 +28,20 @@ class LocationService {
       return const LocationResult.unavailable();
     }
   }
+
+  Stream<LocationAvailable> positionUpdates() =>
+      Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          distanceFilter: 4,
+        ),
+      ).map(
+        (position) => LocationAvailable(
+          latitude: position.latitude,
+          longitude: position.longitude,
+          accuracyMeters: position.accuracy,
+        ),
+      );
 }
 
 sealed class LocationResult {

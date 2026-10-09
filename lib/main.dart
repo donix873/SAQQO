@@ -15,6 +15,7 @@ import 'core/theme/typography.dart';
 import 'core/services/location_service.dart';
 import 'core/services/lifelog_store.dart';
 import 'core/services/sensor_session_service.dart';
+import 'core/services/trip_track_service.dart';
 import 'features/map/arqalyk_map.dart';
 import 'l10n/app_localizations.dart';
 
@@ -463,7 +464,10 @@ enum RecordingState { idle, active, paused }
 class _RecordingPageState extends State<RecordingPage> {
   RecordingState _state = RecordingState.idle;
   final _session = SensorSessionService();
+  final _track = TripTrackService();
   var _candidateCount = 0;
+  StreamSubscription<LocationAvailable>? _positionSubscription;
+  double? _gpsAccuracyMeters;
   DateTime? _startedAt;
   DateTime? _activeSince;
   Duration _elapsed = Duration.zero;
@@ -480,6 +484,7 @@ class _RecordingPageState extends State<RecordingPage> {
   @override
   void dispose() {
     _clock?.cancel();
+    _positionSubscription?.cancel();
     _session.dispose();
     super.dispose();
   }
@@ -487,29 +492,68 @@ class _RecordingPageState extends State<RecordingPage> {
   Future<void> _toggle() async {
     if (_state == RecordingState.active) {
       await _session.pause();
+      await _positionSubscription?.cancel();
+      _positionSubscription = null;
+      _track.pause();
       _pauseClock();
       if (mounted) setState(() => _state = RecordingState.paused);
       return;
     }
     await _session.start();
+    if (_state == RecordingState.paused) {
+      _track.resume();
+    } else {
+      _track.start();
+    }
     _startedAt ??= DateTime.now();
     _activeSince = DateTime.now();
     _clock ??= Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
     if (mounted) setState(() => _state = RecordingState.active);
+    unawaited(_beginLocationTracking());
   }
 
   Future<void> _finish() async {
     await _session.stop();
+    await _positionSubscription?.cancel();
+    _positionSubscription = null;
     _pauseClock();
+    final track = _track.stop();
     final record = TripRecord(
       id: '${_startedAt!.microsecondsSinceEpoch}',
       startedAt: _startedAt!,
       duration: _elapsed,
       candidateCount: _candidateCount,
+      distanceMeters: track.distanceMeters,
+      trackPointCount: track.points.length,
     );
     if (mounted) _pushReplacement(context, TripResultPage(record: record));
+  }
+
+  Future<void> _beginLocationTracking() async {
+    final locationService = LocationService();
+    final current = await locationService.requestCurrentLocation();
+    if (!mounted || _state != RecordingState.active) return;
+    if (current is LocationAvailable) {
+      _addLocationSample(current);
+      _positionSubscription = locationService.positionUpdates().listen(
+        _addLocationSample,
+        onError: (_) {},
+      );
+    }
+  }
+
+  void _addLocationSample(LocationAvailable location) {
+    _track.addSample(
+      latitude: location.latitude,
+      longitude: location.longitude,
+      accuracyMeters: location.accuracyMeters,
+      recordedAt: DateTime.now(),
+    );
+    if (mounted) {
+      setState(() => _gpsAccuracyMeters = location.accuracyMeters);
+    }
   }
 
   void _pauseClock() {
@@ -567,9 +611,17 @@ class _RecordingPageState extends State<RecordingPage> {
           GlassCard(
             child: Row(
               children: [
-                const SaqgoIcon('no_gps', color: SaqgoColors.cyan),
+                SaqgoIcon(
+                  _gpsAccuracyMeters == null ? 'no_gps' : 'locate',
+                  color: SaqgoColors.cyan,
+                ),
                 const SizedBox(width: SaqgoSpacing.sm),
-                Text(l.gpsDisabled, style: SaqgoTypography.cardTitle),
+                Text(
+                  _gpsAccuracyMeters == null
+                      ? l.gpsDisabled
+                      : '${l.locationPermission}: ${_gpsAccuracyMeters!.round()} m',
+                  style: SaqgoTypography.cardTitle,
+                ),
               ],
             ),
           ),
@@ -833,7 +885,7 @@ class SessionDetailsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: SaqgoSpacing.xs),
                 Text(
-                  '${_durationLabel(record.duration)} · ${record.candidateCount} ${l.candidates.toLowerCase()}',
+                  '${_durationLabel(record.duration)} · ${_distanceLabel(record.distanceMeters)} · ${record.candidateCount} ${l.candidates.toLowerCase()}',
                   style: SaqgoTypography.body,
                 ),
               ],
@@ -1520,7 +1572,7 @@ class TripCard extends StatelessWidget {
           MaterialLocalizations.of(context).formatMediumDate(record.startedAt),
         ),
         subtitle: Text(
-          '${_durationLabel(record.duration)} · ${record.candidateCount} ${l.candidates.toLowerCase()}',
+          '${_durationLabel(record.duration)} · ${_distanceLabel(record.distanceMeters)} · ${record.candidateCount} ${l.candidates.toLowerCase()}',
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: onOpen,
@@ -1579,3 +1631,7 @@ String _durationLabel(Duration duration) {
   final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
   return hours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
 }
+
+String _distanceLabel(double meters) => meters >= 1000
+    ? '${(meters / 1000).toStringAsFixed(2)} km'
+    : '${meters.round()} m';

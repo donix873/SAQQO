@@ -9,18 +9,24 @@ class TripRecord {
     required this.startedAt,
     required this.duration,
     required this.candidateCount,
+    required this.distanceMeters,
+    required this.trackPointCount,
   });
 
   final String id;
   final DateTime startedAt;
   final Duration duration;
   final int candidateCount;
+  final double distanceMeters;
+  final int trackPointCount;
 
   Map<String, Object> toJson() => {
     'id': id,
     'startedAt': startedAt.toIso8601String(),
     'durationSeconds': duration.inSeconds,
     'candidateCount': candidateCount,
+    'distanceMeters': distanceMeters,
+    'trackPointCount': trackPointCount,
   };
 
   factory TripRecord.fromJson(Map<String, dynamic> json) => TripRecord(
@@ -28,6 +34,8 @@ class TripRecord {
     startedAt: DateTime.parse(json['startedAt'] as String),
     duration: Duration(seconds: json['durationSeconds'] as int),
     candidateCount: json['candidateCount'] as int,
+    distanceMeters: (json['distanceMeters'] as num?)?.toDouble() ?? 0,
+    trackPointCount: json['trackPointCount'] as int? ?? 0,
   );
 }
 

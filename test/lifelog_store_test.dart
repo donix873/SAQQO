@@ -13,6 +13,8 @@ void main() {
         startedAt: DateTime(2026, 10, 7),
         duration: const Duration(minutes: 3),
         candidateCount: 1,
+        distanceMeters: 120,
+        trackPointCount: 2,
       ),
     );
     await LifeLogStore.add(
@@ -21,6 +23,8 @@ void main() {
         startedAt: DateTime(2026, 10, 8),
         duration: const Duration(minutes: 7),
         candidateCount: 2,
+        distanceMeters: 350,
+        trackPointCount: 4,
       ),
     );
 
