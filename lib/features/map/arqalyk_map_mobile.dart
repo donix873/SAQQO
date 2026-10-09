@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:yandex_maps_mapkit_lite/mapkit.dart' as yandex;
-import 'package:yandex_maps_mapkit_lite/ui_view.dart' as yandex_ui;
+import 'package:yandex_maps_mapkit_lite/yandex_map.dart' as yandex_ui;
 
 import '../../core/theme/radii.dart';
 
@@ -99,7 +99,12 @@ class _ArqalykMapState extends State<ArqalykMap> {
               longitude: location.longitude,
             );
       mapWindow.map.move(
-        yandex.CameraPosition(target, zoom: location == null ? 13 : 16),
+        yandex.CameraPosition(
+          target,
+          zoom: location == null ? 13 : 16,
+          azimuth: 0,
+          tilt: 0,
+        ),
         animation: const yandex.Animation(
           type: yandex.AnimationType.Smooth,
           duration: 0.35,
@@ -142,7 +147,7 @@ class _ArqalykMapState extends State<ArqalykMap> {
           color: const Color(0xFFE9F0F6),
           borderRadius: BorderRadius.circular(SaqgoRadii.card),
         ),
-        child: yandex_ui.FlutterMapWidget(
+        child: yandex_ui.YandexMap(
           onMapCreated: _onYandexMapCreated,
         ),
       );
