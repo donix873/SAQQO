@@ -7,7 +7,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 import 'core/theme/colors.dart';
 import 'core/theme/radii.dart';
@@ -23,13 +22,7 @@ import 'core/services/trip_track_service.dart';
 import 'features/map/arqalyk_map.dart';
 import 'l10n/app_localizations.dart';
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  // Virtual-display composition prevents black/empty native map tiles on
-  // Android devices where the map sits under Flutter overlays.
-  AndroidYandexMap.useAndroidViewSurface = false;
-  runApp(const SaqgoApp());
-}
+void main() => runApp(const SaqgoApp());
 
 class SaqgoApp extends StatefulWidget {
   const SaqgoApp({super.key});

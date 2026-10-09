@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 import '../../core/theme/radii.dart';
 
-/// The shared live map. Route coordinates use [LatLng] in the rest of the
-/// application and are converted here for the native Yandex MapKit view.
+/// Cross-platform interactive map used on Android and in the browser version.
+/// OpenStreetMap tiles keep the map available without a device-specific SDK.
 class ArqalykMap extends StatefulWidget {
   const ArqalykMap({super.key, this.userLocation, this.routePoints = const []});
 
@@ -17,108 +17,99 @@ class ArqalykMap extends StatefulWidget {
 }
 
 class _ArqalykMapState extends State<ArqalykMap> {
-  // A stable initial view means the map remains useful before GPS is allowed.
-  static const _arkalyk = Point(latitude: 50.2486, longitude: 66.9203);
-  YandexMapController? _controller;
-
-  List<Point> get _route => widget.routePoints
-      .map(
-        (point) => Point(latitude: point.latitude, longitude: point.longitude),
-      )
-      .toList(growable: false);
+  static const _arkalyk = LatLng(50.2486, 66.9203);
+  final _mapController = MapController();
 
   @override
   void didUpdateWidget(covariant ArqalykMap oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.routePoints.length > 1 &&
         widget.routePoints != oldWidget.routePoints) {
-      _fitRoute();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fitRoute());
     } else if (widget.userLocation != null &&
         widget.userLocation != oldWidget.userLocation) {
-      _focusUser();
-    }
-  }
-
-  Future<void> _onMapCreated(YandexMapController controller) async {
-    _controller = controller;
-    await controller.toggleUserLayer(
-      visible: true,
-      headingEnabled: true,
-      autoZoomEnabled: false,
-    );
-    if (widget.routePoints.length > 1) {
-      await _fitRoute();
-    } else if (widget.userLocation != null) {
-      await _focusUser();
-    } else {
-      await controller.moveCamera(
-        CameraUpdate.newCameraPosition(
-          const CameraPosition(target: _arkalyk, zoom: 13),
-        ),
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _mapController.move(widget.userLocation!, 16),
       );
     }
   }
 
-  Future<void> _focusUser() async {
-    final location = widget.userLocation;
-    final controller = _controller;
-    if (location == null || controller == null) return;
-    await controller.moveCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: Point(
-            latitude: location.latitude,
-            longitude: location.longitude,
-          ),
-          zoom: 16,
-        ),
+  void _fitRoute() {
+    if (widget.routePoints.length < 2) return;
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: LatLngBounds.fromPoints(widget.routePoints),
+        padding: const EdgeInsets.all(42),
       ),
-      animation: const MapAnimation(duration: 0.35),
-    );
-  }
-
-  Future<void> _fitRoute() async {
-    final controller = _controller;
-    if (controller == null || _route.length < 2) return;
-    await controller.moveCamera(
-      CameraUpdate.newGeometry(Geometry.fromPolyline(Polyline(points: _route))),
-      animation: const MapAnimation(duration: 0.4),
-    );
-    await controller.moveCamera(
-      CameraUpdate.zoomOut(),
-      animation: const MapAnimation(duration: 0.2),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-    final route = _route;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFFE9F0F6),
-        borderRadius: BorderRadius.circular(SaqgoRadii.card),
-      ),
-      // Do not clip the Android platform view: clipping it can leave black
-      // checkerboard tiles on some Android GPU/Flutter combinations.
-      child: YandexMap(
-        nightModeEnabled: false,
-        mapType: MapType.map,
-        logoPadding: const MapPadding(horizontal: 10, vertical: 10),
-        onMapCreated: _onMapCreated,
-        mapObjects: [
-          if (route.length > 1)
-            PolylineMapObject(
-              mapId: const MapObjectId('selected-route'),
-              polyline: Polyline(points: route),
-              zIndex: 3,
-              strokeColor: const Color(0xFF0577E6),
-              strokeWidth: 6,
-              outlineColor: const Color(0x990A3866),
-              outlineWidth: 2,
-              isInnerOutlineEnabled: true,
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: const Color(0xFFE9F0F6),
+      borderRadius: BorderRadius.circular(SaqgoRadii.card),
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(SaqgoRadii.card),
+      child: FlutterMap(
+        mapController: _mapController,
+        options: MapOptions(
+          initialCenter: widget.routePoints.isNotEmpty
+              ? widget.routePoints.first
+              : (widget.userLocation ?? _arkalyk),
+          initialZoom: widget.routePoints.isNotEmpty ? 14 : 13,
+          onMapReady: _fitRoute,
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'kz.saqgo.saqgo',
+          ),
+          if (widget.routePoints.length > 1)
+            PolylineLayer(
+              polylines: [
+                Polyline(
+                  points: widget.routePoints,
+                  strokeWidth: 6,
+                  color: const Color(0xFF0577E6),
+                  borderColor: const Color(0x990A3866),
+                  borderStrokeWidth: 2,
+                ),
+              ],
             ),
+          if (widget.userLocation != null)
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: widget.userLocation!,
+                  width: 46,
+                  height: 46,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0577E6),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 4),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black38, blurRadius: 10),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.navigation_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          RichAttributionWidget(
+            attributions: const [
+              TextSourceAttribution('© OpenStreetMap contributors'),
+            ],
+          ),
         ],
       ),
-    );
-  }
+    ),
+  );
 }
