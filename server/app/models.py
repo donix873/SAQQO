@@ -50,6 +50,6 @@ class HealthResponse(BaseModel):
 
 
 def compact_points(points: list[Point]) -> str:
-    """Yandex routing convention is longitude,latitude; do not log this value."""
-    return "|".join(f"{point.longitude},{point.latitude}" for point in points)
+    """Yandex Router expects latitude,longitude; do not log this value."""
+    return "|".join(f"{point.latitude},{point.longitude}" for point in points)
 

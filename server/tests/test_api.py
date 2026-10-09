@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.main import app  # noqa: E402
+from app.models import Point, compact_points  # noqa: E402
 
 
 client = TestClient(app)
@@ -38,3 +39,12 @@ def test_route_requires_configured_provider() -> None:
 
     assert response.status_code == 503
     assert response.json()["error"]["code"] == "provider_unavailable"
+
+
+def test_router_coordinates_use_latitude_longitude_order() -> None:
+    points = [
+        Point(latitude=50.25, longitude=66.92),
+        Point(latitude=50.26, longitude=66.93),
+    ]
+
+    assert compact_points(points) == "50.25,66.92|50.26,66.93"

@@ -610,8 +610,15 @@ class _RecordingPageState extends State<RecordingPage> {
       candidateCount: _candidateCount,
       distanceMeters: track.distanceMeters,
       trackPointCount: track.points.length,
+      trackPoints: track.points
+          .map(
+            (point) => StoredTrackPoint(
+              latitude: point.latitude,
+              longitude: point.longitude,
+            ),
+          )
+          .toList(growable: false),
     );
-    await LifeLogStore.add(record);
     if (mounted) _pushReplacement(context, TripResultPage(record: record));
   }
 
@@ -750,7 +757,10 @@ class TripResultPage extends StatelessWidget {
       title: l.tripResult,
       child: ListView(
         children: [
-          const DemoMap(height: 200, showRoute: true),
+          SizedBox(
+            height: 200,
+            child: ArqalykMap(routePoints: record.routePoints),
+          ),
           const SizedBox(height: SaqgoSpacing.md),
           GlassCard(child: Text(l.noEvents, style: SaqgoTypography.body)),
           const SizedBox(height: SaqgoSpacing.md),
@@ -1148,7 +1158,10 @@ class SessionDetailsPage extends StatelessWidget {
       title: l.sessionDetails,
       child: ListView(
         children: [
-          const DemoMap(height: 240, showRoute: true),
+          SizedBox(
+            height: 240,
+            child: ArqalykMap(routePoints: record.routePoints),
+          ),
           const SizedBox(height: SaqgoSpacing.md),
           GlassCard(
             child: Column(

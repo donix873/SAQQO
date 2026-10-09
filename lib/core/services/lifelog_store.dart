@@ -1,7 +1,35 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class StoredTrackPoint {
+  const StoredTrackPoint({required this.latitude, required this.longitude});
+
+  final double latitude;
+  final double longitude;
+
+  Map<String, double> toJson() => {
+    'latitude': latitude,
+    'longitude': longitude,
+  };
+
+  static StoredTrackPoint? tryFromJson(Object? value) {
+    if (value is! Map<String, dynamic>) return null;
+    final latitude = (value['latitude'] as num?)?.toDouble();
+    final longitude = (value['longitude'] as num?)?.toDouble();
+    if (latitude == null ||
+        longitude == null ||
+        !latitude.isFinite ||
+        !longitude.isFinite ||
+        latitude.abs() > 90 ||
+        longitude.abs() > 180) {
+      return null;
+    }
+    return StoredTrackPoint(latitude: latitude, longitude: longitude);
+  }
+}
 
 class TripRecord {
   const TripRecord({
@@ -11,6 +39,7 @@ class TripRecord {
     required this.candidateCount,
     required this.distanceMeters,
     required this.trackPointCount,
+    this.trackPoints = const [],
   });
 
   final String id;
@@ -19,6 +48,11 @@ class TripRecord {
   final int candidateCount;
   final double distanceMeters;
   final int trackPointCount;
+  final List<StoredTrackPoint> trackPoints;
+
+  List<LatLng> get routePoints => trackPoints
+      .map((point) => LatLng(point.latitude, point.longitude))
+      .toList(growable: false);
 
   Map<String, Object> toJson() => {
     'id': id,
@@ -27,16 +61,24 @@ class TripRecord {
     'candidateCount': candidateCount,
     'distanceMeters': distanceMeters,
     'trackPointCount': trackPointCount,
+    'trackPoints': trackPoints.map((point) => point.toJson()).toList(),
   };
 
-  factory TripRecord.fromJson(Map<String, dynamic> json) => TripRecord(
-    id: json['id'] as String,
-    startedAt: DateTime.parse(json['startedAt'] as String),
-    duration: Duration(seconds: json['durationSeconds'] as int),
-    candidateCount: json['candidateCount'] as int,
-    distanceMeters: (json['distanceMeters'] as num?)?.toDouble() ?? 0,
-    trackPointCount: json['trackPointCount'] as int? ?? 0,
-  );
+  factory TripRecord.fromJson(Map<String, dynamic> json) {
+    final trackPoints = ((json['trackPoints'] as List<dynamic>?) ?? const [])
+        .map(StoredTrackPoint.tryFromJson)
+        .whereType<StoredTrackPoint>()
+        .toList(growable: false);
+    return TripRecord(
+      id: json['id'] as String,
+      startedAt: DateTime.parse(json['startedAt'] as String),
+      duration: Duration(seconds: json['durationSeconds'] as int),
+      candidateCount: json['candidateCount'] as int,
+      distanceMeters: (json['distanceMeters'] as num?)?.toDouble() ?? 0,
+      trackPointCount: json['trackPointCount'] as int? ?? trackPoints.length,
+      trackPoints: trackPoints,
+    );
+  }
 }
 
 class LifeLogStore {
@@ -55,7 +97,7 @@ class LifeLogStore {
               )
               .toList()
             ..sort((a, b) => b.startedAt.compareTo(a.startedAt));
-    } on FormatException {
+    } on Object {
       trips.value = [];
     }
   }

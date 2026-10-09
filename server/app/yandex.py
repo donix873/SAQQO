@@ -27,11 +27,13 @@ class YandexGateway:
             "format": "json",
             "results": "5",
             "lang": "ru_RU",
+            "bbox": "66.45,50.05~67.38,50.48",
+            "rspn": "1",
         }
         try:
             async with httpx.AsyncClient(timeout=10) as client:
                 response = await client.get(
-                    "https://geocode-maps.yandex.ru/1.x/", params=params
+                    "https://geocode-maps.yandex.ru/v1/", params=params
                 )
                 response.raise_for_status()
         except httpx.HTTPError as error:
