@@ -1,5 +1,7 @@
 name: Publish SAQGO web
 
+# GitHub Pages is deployed automatically after every update to main.
+
 on:
   push:
     branches: [main]
