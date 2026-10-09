@@ -25,6 +25,7 @@ class RouteResult {
 /// Public-map adapter for MVP routing. It sends a user-entered query only after
 /// the person explicitly presses search; no locations are persisted remotely.
 class RoutingService {
+  static const _saqgoApiBaseUrl = String.fromEnvironment('SAQGO_API_BASE_URL');
   static const _headers = {
     'User-Agent': 'SAQGO-MVP/0.1 contact: repository-owner',
   };
@@ -37,6 +38,8 @@ class RoutingService {
   Future<PlaceResult?> searchPlace(String query) async {
     final normalized = query.trim();
     if (normalized.isEmpty) return null;
+    final serverResult = await _searchWithSaqgoApi(normalized);
+    if (serverResult != null) return serverResult;
     final localQuery =
         normalized.toLowerCase().contains('аркалык') ||
             normalized.toLowerCase().contains('arkalyk')
@@ -61,6 +64,34 @@ class RoutingService {
       final latitude = double.tryParse(item['lat'] as String? ?? '');
       final longitude = double.tryParse(item['lon'] as String? ?? '');
       final name = item['display_name'] as String?;
+      if (latitude == null || longitude == null || name == null) return null;
+      return PlaceResult(name: name, position: LatLng(latitude, longitude));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<PlaceResult?> _searchWithSaqgoApi(String query) async {
+    if (_saqgoApiBaseUrl.isEmpty) return null;
+    final base = Uri.tryParse(_saqgoApiBaseUrl);
+    if (base == null || !base.hasScheme) return null;
+    final uri = base.replace(
+      path: '${base.path.replaceFirst(RegExp(r'/$'), '')}/v1/places',
+      queryParameters: {'query': query},
+    );
+    try {
+      final response = await http
+          .get(uri, headers: _headers)
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) return null;
+      final payload = jsonDecode(response.body) as Map<String, dynamic>;
+      final results = payload['results'] as List<dynamic>?;
+      if (results == null || results.isEmpty) return null;
+      final result = results.first as Map<String, dynamic>;
+      final point = result['point'] as Map<String, dynamic>?;
+      final latitude = (point?['latitude'] as num?)?.toDouble();
+      final longitude = (point?['longitude'] as num?)?.toDouble();
+      final name = result['name'] as String?;
       if (latitude == null || longitude == null || name == null) return null;
       return PlaceResult(name: name, position: LatLng(latitude, longitude));
     } catch (_) {
