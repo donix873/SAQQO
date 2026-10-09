@@ -59,9 +59,8 @@
             // Render exactly the selected geometry or recorded track. Never reroute history.
             const segments=data.segments && data.segments.length?data.segments:[route];
             for(const segment of segments){if(segment.length>1)map.geoObjects.add(new window.ymaps.Polyline(segment, {}, { strokeColor: '#3A8BFF', strokeWidth: 6 }));}
-            const line=new window.ymaps.Polyline(route);
             const signature=JSON.stringify(route);
-            if(signature!==routeSignature){map.setBounds(line.geometry.getBounds(), { checkZoomRange: true, zoomMargin: 32 });routeSignature=signature;}
+            if(signature!==routeSignature){const bounds=route.reduce((b,p)=>[[Math.min(b[0][0],p[0]),Math.min(b[0][1],p[1])],[Math.max(b[1][0],p[0]),Math.max(b[1][1],p[1])]],[[route[0][0],route[0][1]],[route[0][0],route[0][1]]]);map.setBounds(bounds, { checkZoomRange: true, zoomMargin: 32 });routeSignature=signature;}
           } else {
             map.setCenter(center, 15);
           }

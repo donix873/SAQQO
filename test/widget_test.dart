@@ -3,11 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:saqgo/main.dart';
 
 void main() {
-  testWidgets('boots the SAQGO application', (tester) async {
+  testWidgets('boots the SaqQo application', (tester) async {
     SharedPreferences.setMockInitialValues({});
 
     await tester.pumpWidget(const SaqgoApp());
 
-    expect(find.text('SAQGO'), findsOneWidget);
+    expect(find.text('SaqQo'), findsOneWidget);
   });
 }

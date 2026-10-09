@@ -9,7 +9,7 @@ class AppLocalizationsKk extends AppLocalizations {
   AppLocalizationsKk([String locale = 'kk']) : super(locale);
 
   @override
-  String get appTitle => 'SAQGO';
+  String get appTitle => 'SaqQo';
 
   @override
   String get chooseLanguage => 'Тілді таңдаңыз';

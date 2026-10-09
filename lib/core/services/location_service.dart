@@ -1,6 +1,8 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter/foundation.dart';
 
 class LocationService {
+  static final latest = ValueNotifier<LocationAvailable?>(null);
   Future<bool> hasLocationPermission() async {
     final permission = await Geolocator.checkPermission();
     return permission == LocationPermission.always ||
@@ -8,29 +10,31 @@ class LocationService {
   }
 
   Future<LocationResult> requestCurrentLocation() async {
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      return const LocationResult.disabled();
-    }
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      return const LocationResult.denied();
-    }
     try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        return const LocationResult.disabled();
+      }
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return const LocationResult.denied();
+      }
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
           timeLimit: Duration(seconds: 12),
         ),
       );
-      return LocationResult.available(
+      final result = LocationAvailable(
         latitude: position.latitude,
         longitude: position.longitude,
         accuracyMeters: position.accuracy,
       );
+      latest.value = result;
+      return result;
     } catch (_) {
       return const LocationResult.unavailable();
     }
@@ -39,7 +43,8 @@ class LocationService {
   Stream<LocationAvailable> positionUpdates() =>
       Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
+          // Browsers may have only network-based location (especially laptops).
+          accuracy: kIsWeb ? LocationAccuracy.medium : LocationAccuracy.high,
           distanceFilter: 3,
         ),
       ).map(

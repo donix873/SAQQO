@@ -10,6 +10,7 @@ import 'core/services/hazard_service.dart';
 import 'core/services/route_risk_service.dart';
 
 import 'package:flutter/material.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -34,6 +35,8 @@ import 'core/services/sensor_candidate_service.dart';
 import 'core/services/trip_track_service.dart';
 import 'features/map/arqalyk_map.dart';
 import 'l10n/app_localizations.dart';
+
+final _homeRouteObserver = RouteObserver<PageRoute<dynamic>>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -91,7 +94,8 @@ class _SaqgoAppState extends State<SaqgoApp> {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'SAQGO',
+    title: 'SaqQo',
+    navigatorObservers: [_homeRouteObserver],
     debugShowCheckedModeBanner: false,
     theme: saqgoTheme(),
     locale: _locale,
@@ -173,7 +177,7 @@ class LanguagePage extends StatelessWidget {
               const BrandMark(size: 72),
               const SizedBox(height: SaqgoSpacing.lg),
               const Text(
-                'SAQGO',
+                'SaqQo',
                 style: TextStyle(
                   fontFamily: "SaqgoSans",
                   fontSize: 40,
@@ -328,15 +332,42 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell> with RouteAware {
   var _index = 0;
+  var _covered = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic>) _homeRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPushNext() {
+    if (mounted) setState(() => _covered = true);
+  }
+
+  @override
+  void didPopNext() {
+    if (mounted) setState(() => _covered = false);
+  }
+
+  @override
+  void dispose() {
+    _homeRouteObserver.unsubscribe(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final pages = [
-      MapPage(onOpenRoutes: () => setState(() => _index = 1)),
+      MapPage(
+        active: !_covered && _index == 0,
+        onOpenRoutes: () => setState(() => _index = 1),
+      ),
       RoutePlannerPage(
+        active: !_covered && _index == 1,
         onNavigate: (route) => _push(context, NavigationPage(route: route)),
       ),
       const HistoryPage(),
@@ -383,7 +414,8 @@ class _HomeShellState extends State<HomeShell> {
 }
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key, required this.onOpenRoutes});
+  const MapPage({super.key, required this.onOpenRoutes, this.active = true});
+  final bool active;
   final VoidCallback onOpenRoutes;
 
   @override
@@ -391,9 +423,52 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
+  StreamSubscription<LocationAvailable>? _locationSubscription;
+  bool _trackingEnabled = false;
+  bool _locationErrorShown = false;
+  @override
+  void didUpdateWidget(covariant MapPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.active) {
+      _locationSubscription?.cancel();
+      _locationSubscription = null;
+    } else if (!oldWidget.active && _trackingEnabled) {
+      _startLocationUpdates();
+    }
+  }
+
+  void _startLocationUpdates() {
+    if (_locationSubscription != null || !widget.active) return;
+    _locationSubscription = LocationService().positionUpdates().listen(
+      (location) {
+        _locationErrorShown = false;
+        if (mounted) {
+          setState(
+            () => _userLocation = LatLng(location.latitude, location.longitude),
+          );
+        }
+      },
+      onError: (_) {
+        // A temporary provider outage must not stop subsequent GPS updates.
+        if (mounted && !_locationErrorShown) {
+          _locationErrorShown = true;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.gpsDisabled)),
+          );
+        }
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
+    final current = LocationService.latest.value;
+    if (current != null) {
+      _userLocation = LatLng(current.latitude, current.longitude);
+      _trackingEnabled = true;
+      _startLocationUpdates();
+    }
     HazardService.items.addListener(_refresh);
     HazardService.layers.addListener(_refresh);
     HazardService.hidden.addListener(_refresh);
@@ -406,6 +481,7 @@ class _MapPageState extends State<MapPage> {
 
   @override
   void dispose() {
+    _locationSubscription?.cancel();
     HazardService.items.removeListener(_refresh);
     HazardService.layers.removeListener(_refresh);
     HazardService.hidden.removeListener(_refresh);
@@ -421,6 +497,8 @@ class _MapPageState extends State<MapPage> {
   LatLng? _userLocation;
 
   void _setUserLocation(LocationAvailable location) {
+    _trackingEnabled = true;
+    _startLocationUpdates();
     setState(
       () => _userLocation = LatLng(location.latitude, location.longitude),
     );
@@ -432,152 +510,166 @@ class _MapPageState extends State<MapPage> {
     return Stack(
       children: [
         Positioned.fill(
-          child: ArqalykMap(
-            userLocation: _userLocation,
-            hazards: HazardService.visible,
-            onHazardSelected: (hazard) =>
-                _push(context, RiskDetailsPage(hazard: hazard)),
-          ),
+          child: widget.active
+              ? ArqalykMap(
+                  userLocation: _userLocation,
+                  hazards: HazardService.visible,
+                  onHazardSelected: (hazard) =>
+                      _push(context, RiskDetailsPage(hazard: hazard)),
+                )
+              : const SizedBox.expand(),
         ),
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(SaqgoSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                GlassCard(
-                  child: Row(
-                    children: [
-                      const BrandMark(size: 36),
-                      const SizedBox(width: SaqgoSpacing.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'SAQGO',
-                              style: SaqgoTypography.cardTitle,
-                            ),
-                            Text(
-                              _presentationScene ? l.demoMap : l.mapSource,
-                              style: SaqgoTypography.label,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(l.arkalyk, style: SaqgoTypography.label),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: SaqgoSpacing.sm),
-                Row(
-                  children: [
-                    IconButton.filledTonal(
-                      onPressed: () => _push(context, const SosPage()),
-                      icon: const SaqgoIcon('sos', color: SaqgoColors.sos),
-                      tooltip: l.sos,
-                    ),
-                    const Spacer(),
-                    IconButton.filledTonal(
-                      onPressed: () => _push(context, const LayersPage()),
-                      icon: const SaqgoIcon('layers'),
-                      tooltip: l.layers,
-                    ),
-                    const SizedBox(width: SaqgoSpacing.xs),
-                    LocateButton(onLocated: _setUserLocation),
-                  ],
-                ),
-                const Spacer(),
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.sizeOf(context).height * 0.42,
-                  ),
-                  child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PointerInterceptor(
                     child: GlassCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          Text(
-                            HazardService.visible.isEmpty
-                                ? l.noVerifiedRisks
-                                : l.hazards,
-                            style: SaqgoTypography.cardTitle,
-                          ),
-                          const SizedBox(height: SaqgoSpacing.xs),
-                          if (HazardService.unavailable.value &&
-                              HazardService.layers.value['demo'] != true)
-                            Text(
-                              l.networkUnavailable,
-                              style: SaqgoTypography.body,
-                            ),
-                          if (HazardService.layers.value['demo'] == true)
-                            Text(l.demo, style: SaqgoTypography.label),
-                          for (final hazard in HazardService.visible.take(2))
-                            ListTile(
-                              dense: true,
-                              title: Text(
-                                hazard.demo
-                                    ? '${l.demo} · ${_hazardTitle(l, hazard.category)}'
-                                    : l.hazards,
-                              ),
-                              onTap: () => _push(
-                                context,
-                                RiskDetailsPage(hazard: hazard),
-                              ),
-                            ),
-                          TextButton(
-                            onPressed: HazardService.refresh,
-                            child: Text(l.retry),
-                          ),
-                          const SizedBox(height: SaqgoSpacing.md),
-                          OutlinedButton.icon(
-                            onPressed: () => _push(
-                              context,
-                              RiskDetailsPage(
-                                hazard: HazardService.visible.isEmpty
-                                    ? null
-                                    : HazardService.visible.first,
-                              ),
-                            ),
-                            icon: const SaqgoIcon('hazards'),
-                            label: Text(l.hazards),
-                          ),
-                          TextButton.icon(
-                            onPressed: () => _push(context, const PulsePage()),
-                            icon: const SaqgoIcon('pulse'),
-                            label: Text(l.livePulse),
-                          ),
-                          const SizedBox(height: SaqgoSpacing.sm),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: widget.onOpenRoutes,
-                                  icon: const SaqgoIcon(
-                                    'route',
-                                    color: SaqgoColors.navy,
-                                  ),
-                                  label: Text(l.route),
+                          const BrandMark(size: 36),
+                          const SizedBox(width: SaqgoSpacing.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'SaqQo',
+                                  style: SaqgoTypography.cardTitle,
                                 ),
-                              ),
-                              const SizedBox(width: SaqgoSpacing.sm),
-                              IconButton.filled(
-                                onPressed: () =>
-                                    _push(context, const RecordingPage()),
-                                icon: const SaqgoIcon(
-                                  'sensors',
-                                  color: SaqgoColors.navy,
+                                Text(
+                                  _presentationScene ? l.demoMap : l.mapSource,
+                                  style: SaqgoTypography.label,
                                 ),
-                                tooltip: l.scan,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                          Text(l.arkalyk, style: SaqgoTypography.label),
                         ],
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: SaqgoSpacing.sm),
+                  PointerInterceptor(
+                    child: Row(
+                      children: [
+                        IconButton.filledTonal(
+                          onPressed: () => _push(context, const SosPage()),
+                          icon: const SaqgoIcon('sos', color: SaqgoColors.sos),
+                          tooltip: l.sos,
+                        ),
+                        const Spacer(),
+                        IconButton.filledTonal(
+                          onPressed: () => _push(context, const LayersPage()),
+                          icon: const SaqgoIcon('layers'),
+                          tooltip: l.layers,
+                        ),
+                        const SizedBox(width: SaqgoSpacing.xs),
+                        LocateButton(onLocated: _setUserLocation),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  PointerInterceptor(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * 0.42,
+                      ),
+                      child: SingleChildScrollView(
+                        child: GlassCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                HazardService.visible.isEmpty
+                                    ? l.noVerifiedRisks
+                                    : l.hazards,
+                                style: SaqgoTypography.cardTitle,
+                              ),
+                              const SizedBox(height: SaqgoSpacing.xs),
+                              if (HazardService.unavailable.value &&
+                                  HazardService.layers.value['demo'] != true)
+                                Text(
+                                  l.networkUnavailable,
+                                  style: SaqgoTypography.body,
+                                ),
+                              if (HazardService.layers.value['demo'] == true)
+                                Text(l.demo, style: SaqgoTypography.label),
+                              for (final hazard in HazardService.visible.take(
+                                2,
+                              ))
+                                ListTile(
+                                  dense: true,
+                                  title: Text(
+                                    hazard.demo
+                                        ? '${l.demo} · ${_hazardTitle(l, hazard.category)}'
+                                        : l.hazards,
+                                  ),
+                                  onTap: () => _push(
+                                    context,
+                                    RiskDetailsPage(hazard: hazard),
+                                  ),
+                                ),
+                              TextButton(
+                                onPressed: HazardService.refresh,
+                                child: Text(l.retry),
+                              ),
+                              const SizedBox(height: SaqgoSpacing.md),
+                              OutlinedButton.icon(
+                                onPressed: () => _push(
+                                  context,
+                                  RiskDetailsPage(
+                                    hazard: HazardService.visible.isEmpty
+                                        ? null
+                                        : HazardService.visible.first,
+                                  ),
+                                ),
+                                icon: const SaqgoIcon('hazards'),
+                                label: Text(l.hazards),
+                              ),
+                              TextButton.icon(
+                                onPressed: () =>
+                                    _push(context, const PulsePage()),
+                                icon: const SaqgoIcon('pulse'),
+                                label: Text(l.livePulse),
+                              ),
+                              const SizedBox(height: SaqgoSpacing.sm),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: FilledButton.icon(
+                                      onPressed: widget.onOpenRoutes,
+                                      icon: const SaqgoIcon(
+                                        'route',
+                                        color: SaqgoColors.navy,
+                                      ),
+                                      label: Text(l.route),
+                                    ),
+                                  ),
+                                  const SizedBox(width: SaqgoSpacing.sm),
+                                  IconButton.filled(
+                                    onPressed: () =>
+                                        _push(context, const RecordingPage()),
+                                    icon: const SaqgoIcon(
+                                      'sensors',
+                                      color: SaqgoColors.navy,
+                                    ),
+                                    tooltip: l.scan,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1085,7 +1177,8 @@ class TripResultPage extends StatelessWidget {
 }
 
 class RoutePlannerPage extends StatefulWidget {
-  const RoutePlannerPage({super.key, this.onNavigate});
+  const RoutePlannerPage({super.key, this.onNavigate, this.active = true});
+  final bool active;
   final ValueChanged<RouteResult>? onNavigate;
 
   @override
@@ -1305,11 +1398,13 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
           const SizedBox(height: SaqgoSpacing.md),
           SizedBox(
             height: 220,
-            child: ArqalykMap(
-              routePoints: _routes.isEmpty
-                  ? const []
-                  : _routes[_selectedRoute].points,
-            ),
+            child: widget.active
+                ? ArqalykMap(
+                    routePoints: _routes.isEmpty
+                        ? const []
+                        : _routes[_selectedRoute].points,
+                  )
+                : const SizedBox.expand(),
           ),
           const SizedBox(height: SaqgoSpacing.md),
           for (var index = 0; index < _routes.length; index++)
@@ -2233,14 +2328,19 @@ class SaqgoScaffold extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(title)),
     body: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          SaqgoSpacing.md,
-          0,
-          SaqgoSpacing.md,
-          SaqgoSpacing.md,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SaqgoSpacing.md,
+              0,
+              SaqgoSpacing.md,
+              SaqgoSpacing.md,
+            ),
+            child: child,
+          ),
         ),
-        child: child,
       ),
     ),
   );
@@ -2336,6 +2436,7 @@ class _LocateButtonState extends State<LocateButton> {
   @override
   Widget build(BuildContext context) => IconButton.filledTonal(
     onPressed: _loading ? null : _locate,
+    tooltip: AppLocalizations.of(context)!.useMyLocation,
     icon: _loading
         ? const SizedBox.square(
             dimension: 18,

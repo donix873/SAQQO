@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: saqqo
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /v1/health
+    envVars:
+      - key: SAQGO_ENV
+        value: production
+      - key: YANDEX_GEOCODER_API_KEY
+        sync: false
+      - key: YANDEX_ROUTE_DETAILS_API_KEY
+        sync: false
+      - key: YANDEX_DISTANCE_MATRIX_API_KEY
+        sync: false

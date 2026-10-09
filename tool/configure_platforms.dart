@@ -24,16 +24,16 @@ void main() {
   }
   manifest = manifest.replaceFirst(
     'android:label="saqgo"',
-    'android:label="SAQGO"',
+    'android:label="SaqQo"',
   );
   android.writeAsStringSync(manifest);
 
   var plist = ios.readAsStringSync();
   const values = {
     'NSLocationWhenInUseUsageDescription':
-        'SAQGO uses your location only when you request a map location or start a voluntary session.',
+        'SaqQo uses your location only when you request a map location or start a voluntary session.',
     'NSMotionUsageDescription':
-        'SAQGO reads motion sensors only during a session you explicitly start.',
+        'SaqQo reads motion sensors only during a session you explicitly start.',
   };
   for (final entry in values.entries) {
     if (!plist.contains('<key>${entry.key}</key>')) {

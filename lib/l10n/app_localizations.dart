@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In ru, this message translates to:
-  /// **'SAQGO'**
+  /// **'SaqQo'**
   String get appTitle;
 
   /// No description provided for @chooseLanguage.
