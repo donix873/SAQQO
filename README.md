@@ -1,107 +1,121 @@
 # SAQGO
 
-Flutter MVP мобильной платформы городской мобильности для Арқалық / Аркалыка. Требования: предоставленное заказчиком ТЗ `SAQGO_Full_Technical_Specification_v1_3_RU_KK.pdf`, версия 1.3.
+SAQGO — Flutter-приложение городской мобильности для Аркалыка по ТЗ
+`SAQGO_Full_Technical_Specification_v1_3_RU_KK.pdf`. Текущая версия:
+`0.2.0+2`.
 
-## Что реализовано в исходниках
+## Что работает
 
-- Flutter UI в единой дизайн-системе: темная карта, отдельные SVG/PNG-иконки, app icon и splash-символ.
-- RU и ҚАЗ через ARB-локализацию, с выбором и сохранением языка на устройстве.
-- Экраны S01–S15: язык, onboarding, карта и слои, риск, SmartRoads, результат, поиск маршрута, навигация, Live Pulse, LifeLog, детали сессии, SOS, настройки и административный прототип.
-- Интерактивная карта Аркалыка работает на Android и в браузере ПК через OpenStreetMap; показывает GPS-метку пользователя и линию выбранного маршрута. Подключение Яндекс JavaScript API возможно после создания отдельного ключа этого продукта.
-- GPS запрашивается только по действию пользователя. Датчики читаются только в явной пользовательской сессии; эвристика создаёт **неподтверждённый кандидат вибрации**, а не диагноз дороги, льда или люка.
-- SOS запускает системный набор `112` и не утверждает, что помощь отправлена автоматически.
-- Локальная история и выбранный язык используют хранилище устройства. Backend, модерация и BLE-спасение не включены: им нужны отдельные проверенные данные, роли, сервер и полевые испытания.
+- интерфейс S01–S15 на русском и казахском с сохранением выбранного языка;
+- Yandex Maps JavaScript API в веб-версии;
+- официальный Yandex MapKit на Android/iOS при передаче мобильного ключа;
+- отображение GPS-позиции и геометрии маршрута;
+- поиск мест и маршруты через приватный SAQGO API с Yandex Geocoder и
+  Yandex Router;
+- ограниченный Аркалыком Nominatim/OSRM fallback для разработки без сервера;
+- добровольная SmartRoads-сессия с паузой, завершением и локальным треком;
+- LifeLog с реальной геометрией сохранённых поездок и календарём текущего
+  месяца;
+- SOS открывает системный набор номера 112, но не имитирует отправку вызова;
+- FastAPI gateway с rate limit, CORS, единым форматом ошибок и без логирования
+  адресов, координат и ключей;
+- автоматические проверки Flutter, Android APK, web, Python API и публикация
+  GitHub Pages.
 
-## Запуск
+Риски, Live Pulse и сенсорные кандидаты остаются исследовательскими данными.
+Приложение не гарантирует безопасность маршрута и не заменяет экстренные
+службы.
 
-Нужны Git, Flutter stable, Android Studio с Android SDK для Android и Xcode для iOS. На Mac для iOS запускайте команды из Terminal; сборка iOS невозможна в Windows.
+## Быстрый запуск
+
+Нужны Flutter stable, Git, Android Studio/Android SDK. Для iOS нужен macOS с
+Xcode.
 
 ```sh
 git clone https://github.com/donix873/SAQQO.git
 cd SAQQO
 bash tool/bootstrap_flutter.sh
-```
-
-`bootstrap_flutter.sh` создаст нативные Android/iOS каталоги, добавит разрешения GPS/движения, сгенерирует app icon и splash, загрузит пакеты, сгенерирует локализации и запустит анализ с тестами.
-
-Затем подключите телефон или запустите эмулятор и выполните:
-
-```sh
-flutter devices
 flutter run
 ```
 
-Для Android выпускной APK:
+Скрипт создаёт/обновляет нативные каталоги, настраивает разрешения, генерирует
+иконки, splash и локализации, затем запускает `flutter analyze` и тесты.
+
+### Yandex Maps и SAQGO API
+
+Ключи не записываются в репозиторий. Передавайте только публичные клиентские
+ключи соответствующей платформы:
 
 ```sh
-flutter build apk --release
+flutter run \
+  --dart-define=YANDEX_MAPKIT_API_KEY=mobile-key \
+  --dart-define=SAQGO_API_BASE_URL=https://api.example.kz
 ```
 
-### Версия для ПК (в браузере)
-
-На компьютере откройте Terminal / PowerShell в папке проекта и выполните:
+Для web:
 
 ```sh
-flutter run -d chrome
+flutter run -d chrome \
+  --dart-define=YANDEX_JS_API_KEY=javascript-key \
+  --dart-define=SAQGO_API_BASE_URL=https://api.example.kz
 ```
 
-Для готовой папки сайта, которую можно разместить на хостинге:
+- `YANDEX_MAPKIT_API_KEY` ограничьте Android package
+  `kz.saqgo.saqgo`/iOS bundle ID и подписями приложения.
+- `YANDEX_JS_API_KEY` ограничьте доменом опубликованного сайта.
+- приватные ключи Geocoder/Router/Distance Matrix должны находиться только на
+  сервере.
+
+Без мобильного ключа приложение честно использует OpenStreetMap как fallback.
+Без `SAQGO_API_BASE_URL` поиск и маршруты переходят на ограниченный публичный
+fallback.
+
+## Сервер
 
 ```sh
-flutter build web --release
+cd server
+cp .env.example .env
+# заполните .env приватными серверными ключами
+docker build -t saqgo-api .
+docker run --env-file .env -p 8000:8000 saqgo-api
 ```
 
-Файлы появятся в `build/web/`. Windows-приложение `.exe` нельзя собрать из Linux: для него нужна Windows-машина с Visual Studio. Браузерная версия работает и на Windows, и на macOS, и на Linux.
+Проверка: `http://localhost:8000/v1/health`. Полный список endpoint и правила
+production-развёртывания: [server/README.md](server/README.md).
 
-Для iPhone:
-
-```sh
-flutter build ios --release
-```
-
-Перед первой установкой настройте подпись Android/iOS в Android Studio/Xcode. Для публикации в App Store нужен Apple Developer account.
-
-## Проверки
+## Сборки и проверки
 
 ```sh
 flutter gen-l10n
 flutter analyze
 flutter test
-XDG_CACHE_HOME=/workspace/.cache /workspace/.saqgo-design-venv/bin/python design/generate.py
-/workspace/.saqgo-design-venv/bin/python design/validate.py
+flutter build apk --debug
+flutter build web --release
+cd server && pytest
 ```
 
-`design/validate.py` проверяет 60 визуальных экспортов и оригинальные ассеты. `flutter test` проверяет консервативную эвристику сенсорного кандидата; успешный тест не доказывает качество распознавания на реальных дорогах.
+GitHub Actions сохраняет debug APK как artifact `saqgo-android-debug` и
+публикует web-сборку через GitHub Pages. Release APK/IPA перед публикацией нужно
+подписать собственными production-сертификатами.
 
-## Первый результат: визуальная концепция 01
-
-- `design/moodboard.svg` / `.png`: палитра, типографика, иконки и карта-концепт.
-- `design/overview.png`: обзор пяти эталонных экранов.
-- `design/gallery.html`: локальная галерея с переключением RU/ҚАЗ и iOS/Android.
-- `design/exports/`: 60 самостоятельных PNG 2× и 60 редактируемых SVG (15 × 2 языка × 2 платформы).
-- `assets/icons/`: оригинальные отдельные SVG и прозрачные PNG 1×/2×/3×; `assets/assets_manifest.csv` — происхождение и лицензия.
-- `assets/branding/`: самостоятельные app icon 1024×1024 и splash-символ в SVG/PNG.
-
-Открыть `design/gallery.html` браузером непосредственно с диска. Для локальной проверки через HTTP:
+Статические дизайн-материалы находятся в `design/`: 60 SVG и 60 PNG для
+15 экранов × 2 языка × 2 платформы. Их проверка:
 
 ```sh
-cd /workspace/SAQQO
-python -m http.server 8080 --bind 127.0.0.1
+python -m pip install -r design/requirements.txt
+python design/generate.py
+python design/validate.py
 ```
 
-## Пересборка визуалов
+## Честные ограничения
 
-Python 3.12, CairoSVG 2.9.1, Pillow 12.3.0; нужны системная Cairo и Noto Sans с кириллицей/казахским.
+- подтверждённого источника городских рисков и процесса модерации пока нет;
+- административный экран показывает техническое состояние, но защищённый
+  кабинет ролей/модерации требует отдельной авторизации, MFA и аудита;
+- offline-карты, push и BLE mesh не заявлены готовыми;
+- требуется редакторская проверка казахского текста и тестирование на реальных
+  Android/iOS устройствах;
+- серверный контейнер готов к развёртыванию, но адрес production-хостинга,
+  TLS, домен и секреты задаёт владелец инфраструктуры.
 
-```sh
-python -m venv /workspace/.saqgo-design-venv
-/workspace/.saqgo-design-venv/bin/pip install -r design/requirements.txt
-XDG_CACHE_HOME=/workspace/.cache /workspace/.saqgo-design-venv/bin/python design/generate.py
-```
-
-На другой машине используйте локальный путь для виртуального окружения вместо `/workspace`.
-Генератор перезаписывает только собственные ассеты и экспорты; правки исходных макетов нужно переносить в генератор, иначе они будут заменены при следующем запуске.
-
-## Ограничения, которые нельзя имитировать
-
-Казахский текст требует проверки редактором до публикации. Реальные риски, модерация, безопасная маршрутизация, офлайн-карты, push, BLE mesh, backend и админ-доступ не могут считаться готовыми без источников данных, серверной инфраструктуры, юридических документов, ключей поставщиков и испытаний на устройствах. Подробности: `design/REVIEW.md`.
+Подробнее о статических макетах: [design/REVIEW.md](design/REVIEW.md).
