@@ -25,7 +25,8 @@ jobs:
         with:
           channel: stable
       - run: flutter pub get
-      - run: flutter build web --release --base-href /SAQQO/
+      - run: flutter build web --release --base-href /SAQQO/ --dart-define=YANDEX_JS_API_KEY="${{ secrets.YANDEX_JS_API_KEY }}"
+      - run: cp web/yandex_map.html build/web/yandex_map.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html, body, #map { height: 100%; width: 100%; margin: 0; background: #e9f0f6; }
+      #status { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; color: #102136; font: 500 14px system-ui, sans-serif; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="status">Загрузка карты Яндекса…</div>
+    <script>
+      (() => {
+        const defaultCenter = [50.2486, 66.9203];
+        const status = document.getElementById('status');
+        let map;
+        let loading;
+        let latest;
+
+        function showStatus(text) {
+          status.textContent = text;
+          status.style.display = 'grid';
+        }
+
+        function render(data) {
+          latest = data;
+          if (!data.apiKey) {
+            showStatus('Ключ JavaScript API ещё не подключён.');
+            return;
+          }
+          if (window.ymaps) {
+            window.ymaps.ready(() => draw(data));
+            return;
+          }
+          if (loading) return;
+          loading = document.createElement('script');
+          loading.src = 'https://api-maps.yandex.ru/2.1/?apikey=' + encodeURIComponent(data.apiKey) + '&lang=ru_RU';
+          loading.onload = () => window.ymaps.ready(() => draw(latest));
+          loading.onerror = () => showStatus('Не удалось загрузить карту Яндекса. Проверьте ключ и разрешённый сайт.');
+          document.head.appendChild(loading);
+        }
+
+        function draw(data) {
+          status.style.display = 'none';
+          const center = data.user || (data.route && data.route[0]) || defaultCenter;
+          if (!map) {
+            map = new window.ymaps.Map('map', { center, zoom: data.route && data.route.length > 1 ? 14 : 13, controls: ['zoomControl', 'geolocationControl'] });
+          }
+          map.geoObjects.removeAll();
+          const route = data.route || [];
+          if (route.length > 1) {
+            const line = new window.ymaps.Polyline(route, {}, { strokeColor: '#0577E6', strokeWidth: 6, strokeOpacity: 0.9 });
+            map.geoObjects.add(line);
+            map.setBounds(line.geometry.getBounds(), { checkZoomRange: true, zoomMargin: 32 });
+          } else {
+            map.setCenter(center, 15);
+          }
+          if (data.user) {
+            map.geoObjects.add(new window.ymaps.Placemark(data.user, { balloonContent: 'Ваше местоположение' }, { preset: 'islands#blueCircleDotIcon' }));
+          }
+        }
+
+        window.addEventListener('message', (event) => {
+          try {
+            const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+            if (data && data.type === 'saqgo-yandex-map') render(data);
+          } catch (_) {
+            showStatus('Не удалось передать данные карты.');
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
