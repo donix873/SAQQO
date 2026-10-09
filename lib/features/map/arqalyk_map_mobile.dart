@@ -77,10 +77,12 @@ class _ArqalykMapState extends State<ArqalykMap> {
     if (route.length > 1) {
       final polyline = yandex.Polyline(route);
       objects.addPolylineWithGeometry(polyline)
-        ..strokeWidth = 6
-        ..setStrokeColor(const Color(0xFF0577E6))
-        ..outlineWidth = 2
-        ..outlineColor = const Color(0x990A3866);
+        ..style = const yandex.LineStyle(
+          strokeWidth: 6,
+          outlineWidth: 2,
+          outlineColor: Color(0x990A3866),
+        )
+        ..setStrokeColor(const Color(0xFF0577E6));
       mapWindow.map.move(
         mapWindow.map.cameraPositionForGeometry(
           yandex.Geometry.fromPolyline(polyline),
