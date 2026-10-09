@@ -10,9 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
       - run: bash tool/bootstrap_flutter.sh
-      - run: flutter build apk --debug
+      - run: flutter build apk --debug --dart-define=YANDEX_MAPKIT_API_KEY="${{ secrets.YANDEX_MAPKIT_API_KEY }}"

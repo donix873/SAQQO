@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:yandex_maps_mapkit_lite/mapkit.dart' as yandex;
+import 'package:yandex_maps_mapkit_lite/ui_view.dart' as yandex_ui;
 
 import '../../core/theme/radii.dart';
 
-/// Stable native fallback while the browser uses the Yandex JavaScript map.
+const _mapkitApiKey = String.fromEnvironment('YANDEX_MAPKIT_API_KEY');
+
+/// Uses the official Yandex MapKit SDK on Android/iOS when its restricted
+/// mobile key is supplied. OpenStreetMap remains a non-secret fallback for
+/// local development and builds where MapKit was not configured.
 class ArqalykMap extends StatefulWidget {
   const ArqalykMap({super.key, this.userLocation, this.routePoints = const []});
 
@@ -17,31 +23,151 @@ class ArqalykMap extends StatefulWidget {
 
 class _ArqalykMapState extends State<ArqalykMap> {
   static const _arkalyk = LatLng(50.2486, 66.9203);
-  final _mapController = MapController();
+  static const _yandexArkalyk = yandex.Point(
+    latitude: 50.2486,
+    longitude: 66.9203,
+  );
+
+  final _fallbackController = MapController();
+  yandex.MapWindow? _mapWindow;
+  yandex.MapObjectCollection? _mapObjects;
+
+  bool get _usesYandex => _mapkitApiKey.isNotEmpty;
+
+  List<yandex.Point> get _yandexRoute => widget.routePoints
+      .map(
+        (point) => yandex.Point(
+          latitude: point.latitude,
+          longitude: point.longitude,
+        ),
+      )
+      .toList(growable: false);
 
   @override
   void didUpdateWidget(covariant ArqalykMap oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (_usesYandex) {
+      _updateYandexMap();
+      return;
+    }
     if (widget.routePoints.length > 1 &&
         widget.routePoints != oldWidget.routePoints) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _fitRoute());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fitFallbackRoute());
     } else if (widget.userLocation != null &&
         widget.userLocation != oldWidget.userLocation) {
       WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _mapController.move(widget.userLocation!, 16),
+        (_) => _fallbackController.move(widget.userLocation!, 16),
       );
     }
   }
 
-  void _fitRoute() {
+  void _onYandexMapCreated(yandex.MapWindow mapWindow) {
+    _mapWindow = mapWindow;
+    _mapObjects = mapWindow.map.mapObjects.addCollection();
+    _updateYandexMap();
+  }
+
+  void _updateYandexMap() {
+    final mapWindow = _mapWindow;
+    final objects = _mapObjects;
+    if (mapWindow == null || objects == null) return;
+
+    objects.clear();
+    final route = _yandexRoute;
+    if (route.length > 1) {
+      final polyline = yandex.Polyline(route);
+      objects.addPolylineWithGeometry(polyline)
+        ..strokeWidth = 6
+        ..setStrokeColor(const Color(0xFF0577E6))
+        ..outlineWidth = 2
+        ..outlineColor = const Color(0x990A3866);
+      mapWindow.map.move(
+        mapWindow.map.cameraPositionForGeometry(
+          yandex.Geometry.fromPolyline(polyline),
+        ),
+        animation: const yandex.Animation(
+          type: yandex.AnimationType.Smooth,
+          duration: 0.4,
+        ),
+      );
+    } else {
+      final location = widget.userLocation;
+      final target = location == null
+          ? _yandexArkalyk
+          : yandex.Point(
+              latitude: location.latitude,
+              longitude: location.longitude,
+            );
+      mapWindow.map.move(
+        yandex.CameraPosition(target, zoom: location == null ? 13 : 16),
+        animation: const yandex.Animation(
+          type: yandex.AnimationType.Smooth,
+          duration: 0.35,
+        ),
+      );
+    }
+
+    final location = widget.userLocation;
+    if (location != null) {
+      objects.addCircle(
+        yandex.Circle(
+          yandex.Point(
+            latitude: location.latitude,
+            longitude: location.longitude,
+          ),
+          radius: 12,
+        ),
+      )
+        ..fillColor = const Color(0xFF0577E6)
+        ..strokeColor = Colors.white
+        ..strokeWidth = 4;
+    }
+  }
+
+  void _fitFallbackRoute() {
     if (widget.routePoints.length < 2) return;
-    _mapController.fitCamera(
+    _fallbackController.fitCamera(
       CameraFit.bounds(
         bounds: LatLngBounds.fromPoints(widget.routePoints),
         padding: const EdgeInsets.all(42),
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_usesYandex) {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xFFE9F0F6),
+          borderRadius: BorderRadius.circular(SaqgoRadii.card),
+        ),
+        child: yandex_ui.FlutterMapWidget(
+          onMapCreated: _onYandexMapCreated,
+        ),
+      );
+    }
+    return _OpenStreetMap(
+      mapController: _fallbackController,
+      userLocation: widget.userLocation,
+      routePoints: widget.routePoints,
+      onMapReady: _fitFallbackRoute,
+    );
+  }
+}
+
+class _OpenStreetMap extends StatelessWidget {
+  const _OpenStreetMap({
+    required this.mapController,
+    required this.userLocation,
+    required this.routePoints,
+    required this.onMapReady,
+  });
+
+  final MapController mapController;
+  final LatLng? userLocation;
+  final List<LatLng> routePoints;
+  final VoidCallback onMapReady;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
@@ -52,24 +178,24 @@ class _ArqalykMapState extends State<ArqalykMap> {
     child: ClipRRect(
       borderRadius: BorderRadius.circular(SaqgoRadii.card),
       child: FlutterMap(
-        mapController: _mapController,
+        mapController: mapController,
         options: MapOptions(
-          initialCenter: widget.routePoints.isNotEmpty
-              ? widget.routePoints.first
-              : (widget.userLocation ?? _arkalyk),
-          initialZoom: widget.routePoints.isNotEmpty ? 14 : 13,
-          onMapReady: _fitRoute,
+          initialCenter: routePoints.isNotEmpty
+              ? routePoints.first
+              : (userLocation ?? _ArqalykMapState._arkalyk),
+          initialZoom: routePoints.isNotEmpty ? 14 : 13,
+          onMapReady: onMapReady,
         ),
         children: [
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'kz.saqgo.saqgo',
           ),
-          if (widget.routePoints.length > 1)
+          if (routePoints.length > 1)
             PolylineLayer(
               polylines: [
                 Polyline(
-                  points: widget.routePoints,
+                  points: routePoints,
                   strokeWidth: 6,
                   color: const Color(0xFF0577E6),
                   borderColor: const Color(0x990A3866),
@@ -77,11 +203,11 @@ class _ArqalykMapState extends State<ArqalykMap> {
                 ),
               ],
             ),
-          if (widget.userLocation != null)
+          if (userLocation != null)
             MarkerLayer(
               markers: [
                 Marker(
-                  point: widget.userLocation!,
+                  point: userLocation!,
                   width: 46,
                   height: 46,
                   child: DecoratedBox(

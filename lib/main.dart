@@ -15,6 +15,7 @@ import 'core/theme/spacing.dart';
 import 'core/theme/theme.dart';
 import 'core/theme/typography.dart';
 import 'core/services/location_service.dart';
+import 'core/services/mapkit_initializer.dart';
 import 'core/services/lifelog_store.dart';
 import 'core/services/routing_service.dart';
 import 'core/services/sensor_session_service.dart';
@@ -22,7 +23,11 @@ import 'core/services/trip_track_service.dart';
 import 'features/map/arqalyk_map.dart';
 import 'l10n/app_localizations.dart';
 
-void main() => runApp(const SaqgoApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeMapkit();
+  runApp(const SaqgoApp());
+}
 
 class SaqgoApp extends StatefulWidget {
   const SaqgoApp({super.key});
