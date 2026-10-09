@@ -1,0 +1,2 @@
+"NSLocationWhenInUseUsageDescription" = "SAQGO использует геопозицию только для выбранной вами функции.";
+"NSMotionUsageDescription" = "Датчики движения используются только во время добровольной записи.";

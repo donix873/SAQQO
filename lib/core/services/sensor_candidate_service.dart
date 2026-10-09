@@ -9,12 +9,15 @@ class SensorCandidateService {
   final int minSamples;
   final List<double> _window = [];
 
+  void reset() => _window.clear();
+
   VibrationCandidate? addSample({
     required double x,
     required double y,
     required double z,
     required DateTime timestamp,
   }) {
+    if (!x.isFinite || !y.isFinite || !z.isFinite) return null;
     final magnitude = math.sqrt(x * x + y * y + z * z);
     _window.add(magnitude);
     if (_window.length > 50) _window.removeAt(0);

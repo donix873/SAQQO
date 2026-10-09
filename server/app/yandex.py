@@ -23,7 +23,7 @@ class YandexGateway:
             raise UpstreamUnavailable("Geocoding is not configured.")
         params = {
             "apikey": self._settings.geocoder_key,
-            "geocode": f"{query}, Аркалык, Казахстан",
+            "geocode": query if any(city in query.lower() for city in ("аркалык","арқалық","arkalyk")) else f"{query}, Аркалык, Казахстан",
             "format": "json",
             "results": "5",
             "lang": "ru_RU",
@@ -39,7 +39,10 @@ class YandexGateway:
         except httpx.HTTPError as error:
             raise UpstreamUnavailable("Geocoding provider is unavailable.") from error
 
-        members = response.json()["response"]["GeoObjectCollection"].get("featureMember", [])
+        try:
+            members = response.json()["response"]["GeoObjectCollection"].get("featureMember", [])
+        except (ValueError, KeyError, TypeError):
+            raise UpstreamUnavailable("Geocoding provider returned invalid data.")
         results: list[Place] = []
         for member in members:
             geo_object = member.get("GeoObject", {})
@@ -49,6 +52,8 @@ class YandexGateway:
             try:
                 longitude, latitude = map(float, position)
             except ValueError:
+                continue
+            if not (50.05 <= latitude <= 50.48 and 66.45 <= longitude <= 67.38):
                 continue
             meta = geo_object.get("metaDataProperty", {}).get(
                 "GeocoderMetaData", {}

@@ -62,10 +62,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get demo => 'Демо-данные';
 
   @override
-  String get demoMap => 'Карта Аркалыка';
+  String get demoMap => 'Демо-схема · не геоданные';
 
   @override
-  String get mapSource => 'Карта: Yandex Maps · резерв: OpenStreetMap';
+  String get mapSource => 'Карта: Яндекс Карты · подписи провайдера';
 
   @override
   String get mapUnavailable => 'Карта временно недоступна';
@@ -211,7 +211,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Не удалось построить маршрут. Проверьте точки и интернет.';
 
   @override
-  String get routeSource => 'Маршрут: Yandex Router · резерв: OSRM';
+  String get routeSource => 'Маршруты и поиск: Яндекс через SAQGO API';
 
   @override
   String get from => 'Откуда';
@@ -393,4 +393,168 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get close => 'Закрыть';
+
+  @override
+  String get yandexKeyRequired =>
+      'Для карты нужен ключ Яндекс MapKit. Без сети доступны история и памятка SOS.';
+
+  @override
+  String get networkUnavailable =>
+      'Нет связи с сервером. Данные могут быть недоступны или устаревшими.';
+
+  @override
+  String get retry => 'Повторить';
+
+  @override
+  String get walking => 'Пешком';
+
+  @override
+  String get driving => 'На автомобиле';
+
+  @override
+  String get exportTrip => 'Экспортировать поездку';
+
+  @override
+  String get exportWarning =>
+      'Файл содержит ваши координаты. Передавайте его только осознанно.';
+
+  @override
+  String get deleteTrip => 'Удалить поездку';
+
+  @override
+  String get deleteDay => 'Удалить выбранный день';
+
+  @override
+  String get eventSource => 'Источник';
+
+  @override
+  String get verified => 'Подтверждено';
+
+  @override
+  String get eventTime => 'Время события';
+
+  @override
+  String get confidenceValue => 'Уверенность';
+
+  @override
+  String get privacyPolicy =>
+      'Путь хранится локально в зашифрованном виде. Карты, поиск и маршрутизация передают необходимые координаты и запросы Яндексу. Наблюдения отправляются только отдельным действием и округляются сервером до сетки. Отозвать запись можно в настройках; историю можно удалить. Политика для production требует правовой проверки.';
+
+  @override
+  String get consentConfirm => 'Согласиться и начать';
+
+  @override
+  String get recordingPermission =>
+      'Разрешить добровольную запись GPS и датчиков';
+
+  @override
+  String get recordingInterrupted =>
+      'Запись остановлена: доступ, датчик или состояние приложения изменились. Сохраните результат.';
+
+  @override
+  String get lowBattery => 'Низкий заряд: запись поставлена на паузу.';
+
+  @override
+  String get alertNearby =>
+      'Впереди подтверждённый риск. Проверьте источник и время.';
+
+  @override
+  String get privacyUpload => 'Отправить кандидаты на проверку';
+
+  @override
+  String get privacyUploadWarning =>
+      'Отправятся только отдельные геометки кандидатов, время, точность и уверенность. Полный трек не отправляется.';
+
+  @override
+  String get uploadDone =>
+      'Наблюдения приняты на проверку. Они ещё не подтверждены.';
+
+  @override
+  String get previousMonth => 'Предыдущий месяц';
+
+  @override
+  String get nextMonth => 'Следующий месяц';
+
+  @override
+  String get meters => 'м';
+
+  @override
+  String get kilometers => 'км';
+
+  @override
+  String get distanceMatrix => 'Матрица расстояний';
+
+  @override
+  String get moderationLogin => 'Вход модератора: пароль и код 2FA';
+
+  @override
+  String get password => 'Пароль';
+
+  @override
+  String get otpCode => 'Код 2FA';
+
+  @override
+  String get login => 'Войти';
+
+  @override
+  String get logout => 'Выйти';
+
+  @override
+  String get approve => 'Подтвердить';
+
+  @override
+  String get reject => 'Отклонить';
+
+  @override
+  String get decisionReason => 'Основание решения (минимум 10 символов)';
+
+  @override
+  String get moderationUnavailable =>
+      'Модерация недоступна. Нужны настроенные сервером пароль, 2FA и HTTPS.';
+
+  @override
+  String get auditTrail => 'Журнал решений';
+
+  @override
+  String get sessionSaveFailed =>
+      'Не удалось открыть или сохранить защищённую историю. Данные не удалены.';
+
+  @override
+  String get recalculate => 'Перестроить маршрут';
+
+  @override
+  String get showAllDays => 'Все дни';
+
+  @override
+  String get hiddenRisk => 'Метка скрыта на этом устройстве';
+
+  @override
+  String get knownRisks => 'Известные риски';
+
+  @override
+  String get createDemoTrip => 'Добавить демо-поездку';
+
+  @override
+  String get demoRoute => 'Показать пример маршрута';
+
+  @override
+  String get roadClosure => 'Ограничение прохода';
+
+  @override
+  String get sidewalk => 'Тротуар';
+
+  @override
+  String get pulseMorning => 'Утро';
+
+  @override
+  String get pulseAfternoon => 'День';
+
+  @override
+  String get pulseEvening => 'Вечер';
+
+  @override
+  String get syntheticZone => 'Демонстрационная ячейка';
+
+  @override
+  String get syntheticDensity => 'синтетическая активность, не люди';
 }

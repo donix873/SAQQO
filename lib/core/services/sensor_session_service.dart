@@ -18,15 +18,21 @@ class SensorSessionService {
     _subscription =
         accelerometerEventStream(
           samplingPeriod: const Duration(milliseconds: 40),
-        ).listen((event) {
-          final candidate = _candidateService.addSample(
-            x: event.x,
-            y: event.y,
-            z: event.z,
-            timestamp: DateTime.now(),
-          );
-          if (candidate != null) _candidates.add(candidate);
-        });
+        ).listen(
+          (event) {
+            final candidate = _candidateService.addSample(
+              x: event.x,
+              y: event.y,
+              z: event.z,
+              timestamp: DateTime.now(),
+            );
+            if (candidate != null) _candidates.add(candidate);
+          },
+          onError: (Object error) {
+            _candidates.addError(error);
+            stop();
+          },
+        );
   }
 
   Future<void> pause() => stop();
@@ -34,6 +40,7 @@ class SensorSessionService {
   Future<void> stop() async {
     await _subscription?.cancel();
     _subscription = null;
+    _candidateService.reset();
   }
 
   Future<void> dispose() async {

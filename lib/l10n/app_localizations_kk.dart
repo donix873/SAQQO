@@ -62,10 +62,10 @@ class AppLocalizationsKk extends AppLocalizations {
   String get demo => 'Демо-деректер';
 
   @override
-  String get demoMap => 'Арқалық картасы';
+  String get demoMap => 'Демо-схема · геодеректер емес';
 
   @override
-  String get mapSource => 'Карта: Yandex Maps · резерв: OpenStreetMap';
+  String get mapSource => 'Карта: Яндекс Карталар · провайдер атаулары';
 
   @override
   String get mapUnavailable => 'Карта уақытша қолжетімсіз';
@@ -211,7 +211,7 @@ class AppLocalizationsKk extends AppLocalizations {
       'Бағытты құру мүмкін болмады. Нүктелер мен интернетті тексеріңіз.';
 
   @override
-  String get routeSource => 'Бағыт: Yandex Router · резерв: OSRM';
+  String get routeSource => 'Бағыттар мен іздеу: SAQGO API арқылы Яндекс';
 
   @override
   String get from => 'Қайдан';
@@ -393,4 +393,168 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get close => 'Жабу';
+
+  @override
+  String get yandexKeyRequired =>
+      'Карта үшін Яндекс MapKit кілті қажет. Желісіз тарих пен SOS нұсқаулығы қолжетімді.';
+
+  @override
+  String get networkUnavailable =>
+      'Сервермен байланыс жоқ. Деректер қолжетімсіз немесе ескірген болуы мүмкін.';
+
+  @override
+  String get retry => 'Қайталау';
+
+  @override
+  String get walking => 'Жаяу';
+
+  @override
+  String get driving => 'Көлікпен';
+
+  @override
+  String get exportTrip => 'Сапарды экспорттау';
+
+  @override
+  String get exportWarning =>
+      'Файлда сіздің координаттарыңыз бар. Оны тек саналы түрде бөлісіңіз.';
+
+  @override
+  String get deleteTrip => 'Сапарды жою';
+
+  @override
+  String get deleteDay => 'Таңдалған күнді жою';
+
+  @override
+  String get eventSource => 'Дереккөз';
+
+  @override
+  String get verified => 'Расталған';
+
+  @override
+  String get eventTime => 'Оқиға уақыты';
+
+  @override
+  String get confidenceValue => 'Сенімділік';
+
+  @override
+  String get privacyPolicy =>
+      'Жол құрылғыда шифрланған түрде сақталады. Карталар, іздеу және бағыт құру қажетті координаттар мен сұрауларды Яндекске жібереді. Бақылаулар тек бөлек әрекетпен жіберіліп, серверде торға дейін дөңгелектенеді. Жазуды баптауларда өшіріп, тарихты жоюға болады. Өндірістік саясат құқықтық тексеруді қажет етеді.';
+
+  @override
+  String get consentConfirm => 'Келісіп бастау';
+
+  @override
+  String get recordingPermission =>
+      'GPS пен датчиктерді ерікті жазуға рұқсат беру';
+
+  @override
+  String get recordingInterrupted =>
+      'Жазу тоқтатылды: рұқсат, датчик немесе қолданба күйі өзгерді. Нәтижені сақтаңыз.';
+
+  @override
+  String get lowBattery => 'Заряд аз: жазу тоқтатылды.';
+
+  @override
+  String get alertNearby =>
+      'Алда расталған қауіп бар. Дереккөз бен уақытты тексеріңіз.';
+
+  @override
+  String get privacyUpload => 'Кандидаттарды тексеруге жіберу';
+
+  @override
+  String get privacyUploadWarning =>
+      'Тек кандидаттардың геобелгілері, уақыт, дәлдік пен сенімділік жіберіледі. Толық жол жіберілмейді.';
+
+  @override
+  String get uploadDone =>
+      'Бақылаулар тексеруге қабылданды. Олар әлі расталмаған.';
+
+  @override
+  String get previousMonth => 'Алдыңғы ай';
+
+  @override
+  String get nextMonth => 'Келесі ай';
+
+  @override
+  String get meters => 'м';
+
+  @override
+  String get kilometers => 'км';
+
+  @override
+  String get distanceMatrix => 'Қашықтықтар матрицасы';
+
+  @override
+  String get moderationLogin => 'Модератор кіруі: құпиясөз және 2FA коды';
+
+  @override
+  String get password => 'Құпиясөз';
+
+  @override
+  String get otpCode => '2FA коды';
+
+  @override
+  String get login => 'Кіру';
+
+  @override
+  String get logout => 'Шығу';
+
+  @override
+  String get approve => 'Растау';
+
+  @override
+  String get reject => 'Қабылдамау';
+
+  @override
+  String get decisionReason => 'Шешім негізі (кемінде 10 таңба)';
+
+  @override
+  String get moderationUnavailable =>
+      'Модерация қолжетімсіз. Серверде құпиясөз, 2FA және HTTPS бапталуы қажет.';
+
+  @override
+  String get auditTrail => 'Шешімдер журналы';
+
+  @override
+  String get sessionSaveFailed =>
+      'Қорғалған тарихты ашу немесе сақтау мүмкін болмады. Деректер жойылмады.';
+
+  @override
+  String get recalculate => 'Бағытты қайта есептеу';
+
+  @override
+  String get showAllDays => 'Барлық күндер';
+
+  @override
+  String get hiddenRisk => 'Белгі осы құрылғыда жасырылды';
+
+  @override
+  String get knownRisks => 'Белгілі қауіптер';
+
+  @override
+  String get createDemoTrip => 'Демо-сапар қосу';
+
+  @override
+  String get demoRoute => 'Бағыт мысалын көрсету';
+
+  @override
+  String get roadClosure => 'Өтуді шектеу';
+
+  @override
+  String get sidewalk => 'Тротуар';
+
+  @override
+  String get pulseMorning => 'Таң';
+
+  @override
+  String get pulseAfternoon => 'Күндіз';
+
+  @override
+  String get pulseEvening => 'Кеш';
+
+  @override
+  String get syntheticZone => 'Демонстрациялық ұяшық';
+
+  @override
+  String get syntheticDensity => 'синтетикалық белсенділік, адамдар емес';
 }

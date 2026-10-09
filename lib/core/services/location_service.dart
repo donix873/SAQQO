@@ -32,14 +32,6 @@ class LocationService {
         accuracyMeters: position.accuracy,
       );
     } catch (_) {
-      final lastKnown = await Geolocator.getLastKnownPosition();
-      if (lastKnown != null) {
-        return LocationResult.available(
-          latitude: lastKnown.latitude,
-          longitude: lastKnown.longitude,
-          accuracyMeters: lastKnown.accuracy,
-        );
-      }
       return const LocationResult.unavailable();
     }
   }

@@ -1,3 +1,6 @@
+import 'yandex_web_gateway_stub.dart'
+    if (dart.library.js_interop) 'yandex_web_gateway.dart';
+import 'api_configuration.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -16,67 +19,38 @@ class RouteResult {
     required this.points,
     required this.distanceMeters,
     required this.duration,
+    this.demo = false,
   });
 
   final List<LatLng> points;
   final double distanceMeters;
   final Duration duration;
+  final bool demo;
 }
 
-/// Routing adapter for the SAQGO server with a public fallback.
+/// Yandex-only routing through the private SAQGO gateway.
 ///
 /// Address and coordinate requests are sent only after an explicit user action.
 /// Provider keys stay on the server and no query is persisted by this client.
 class RoutingService {
-  static const _saqgoApiBaseUrl = String.fromEnvironment('SAQGO_API_BASE_URL');
-  static const _nativePublicHeaders = {
-    'Accept': 'application/json',
-    'User-Agent': 'SAQGO-MVP/0.1 contact: repository-owner',
-  };
-  static const _webPublicHeaders = {'Accept': 'application/json'};
-
-  // Search is intentionally limited to Arkalyk. Without this restriction a
-  // short street name can resolve to another city and produce a misleading
-  // route hundreds of kilometres away.
-  static const _arkalykViewBox = '66.45,50.48,67.38,50.05';
-
-  static Map<String, String> get _publicHeaders =>
-      kIsWeb ? _webPublicHeaders : _nativePublicHeaders;
-
+  static String get _saqgoApiBaseUrl => ApiConfiguration.baseUrl;
   Future<PlaceResult?> searchPlace(String query) async {
     final normalized = query.trim();
     if (normalized.isEmpty) return null;
     final serverResult = await _searchWithSaqgoApi(normalized);
     if (serverResult != null) return serverResult;
-    final localQuery =
-        normalized.toLowerCase().contains('аркалык') ||
-            normalized.toLowerCase().contains('arkalyk')
-        ? normalized
-        : '$normalized, Аркалык, Казахстан';
-    final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
-      'q': localQuery,
-      'format': 'jsonv2',
-      'limit': '1',
-      'countrycodes': 'kz',
-      'viewbox': _arkalykViewBox,
-      'bounded': '1',
-    });
-    try {
-      final response = await http
-          .get(uri, headers: _publicHeaders)
-          .timeout(const Duration(seconds: 12));
-      if (response.statusCode != 200) return null;
-      final data = jsonDecode(response.body) as List<dynamic>;
-      if (data.isEmpty) return null;
-      final item = data.first as Map<String, dynamic>;
-      final latitude = double.tryParse(item['lat'] as String? ?? '');
-      final longitude = double.tryParse(item['lon'] as String? ?? '');
-      final name = item['display_name'] as String?;
-      if (latitude == null || longitude == null || name == null) return null;
-      return PlaceResult(name: name, position: LatLng(latitude, longitude));
-    } catch (_) {
-      return null;
-    }
+    final payload = await browserGeocode(normalized);
+    final results = payload?['results'] as List<dynamic>?;
+    if (results == null || results.isEmpty) return null;
+    final result = results.first as Map<String, dynamic>;
+    final point = result['point'] as Map<String, dynamic>;
+    return PlaceResult(
+      name: result['name'] as String,
+      position: LatLng(
+        (point['latitude'] as num).toDouble(),
+        (point['longitude'] as num).toDouble(),
+      ),
+    );
   }
 
   Future<PlaceResult?> _searchWithSaqgoApi(String query) async {
@@ -105,23 +79,35 @@ class RoutingService {
   Future<RouteResult?> buildRoute({
     required LatLng from,
     required LatLng to,
+    String mode = 'driving',
   }) async {
-    final routes = await buildRoutes(from: from, to: to);
+    final routes = await buildRoutes(from: from, to: to, mode: mode);
     return routes.isEmpty ? null : routes.first;
   }
 
   Future<List<RouteResult>> buildRoutes({
     required LatLng from,
     required LatLng to,
+    String mode = 'driving',
   }) async {
-    final serverRoutes = await _buildWithSaqgoApi(from: from, to: to);
+    final serverRoutes = await _buildWithSaqgoApi(
+      from: from,
+      to: to,
+      mode: mode,
+    );
     if (serverRoutes.isNotEmpty) return serverRoutes;
-    return _buildWithOsrm(from: from, to: to);
+    final payload = await browserRoutes(
+      [from.latitude, from.longitude],
+      [to.latitude, to.longitude],
+      mode,
+    );
+    return payload == null ? const [] : parseSaqgoRoutePayload(payload);
   }
 
   Future<List<RouteResult>> _buildWithSaqgoApi({
     required LatLng from,
     required LatLng to,
+    required String mode,
   }) async {
     final uri = _serverUri('/v1/routes');
     if (uri == null) return const [];
@@ -142,7 +128,7 @@ class RoutingService {
                 'latitude': to.latitude,
                 'longitude': to.longitude,
               },
-              'mode': 'driving',
+              'mode': mode,
             }),
           )
           .timeout(const Duration(seconds: 15));
@@ -155,56 +141,7 @@ class RoutingService {
     }
   }
 
-  Future<List<RouteResult>> _buildWithOsrm({
-    required LatLng from,
-    required LatLng to,
-  }) async {
-    final path =
-        '/route/v1/driving/${from.longitude},${from.latitude};${to.longitude},${to.latitude}';
-    final uri = Uri.https('router.project-osrm.org', path, {
-      'overview': 'full',
-      'geometries': 'geojson',
-      'alternatives': 'true',
-    });
-    try {
-      final response = await http
-          .get(uri, headers: _publicHeaders)
-          .timeout(const Duration(seconds: 15));
-      if (response.statusCode != 200) return const [];
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final routes = data['routes'] as List<dynamic>?;
-      if (routes == null || routes.isEmpty) return const [];
-      return routes
-          .map((rawRoute) {
-            final route = rawRoute as Map<String, dynamic>;
-            final coordinates =
-                ((route['geometry'] as Map<String, dynamic>)['coordinates']
-                        as List<dynamic>)
-                    .cast<List<dynamic>>();
-            final points = coordinates
-                .map(
-                  (coordinate) => LatLng(
-                    (coordinate[1] as num).toDouble(),
-                    (coordinate[0] as num).toDouble(),
-                  ),
-                )
-                .toList(growable: false);
-            return RouteResult(
-              points: points,
-              distanceMeters: (route['distance'] as num).toDouble(),
-              duration: Duration(seconds: (route['duration'] as num).round()),
-            );
-          })
-          .toList(growable: false);
-    } catch (_) {
-      return const [];
-    }
-  }
-
-  Uri? _serverUri(
-    String endpoint, {
-    Map<String, String>? queryParameters,
-  }) {
+  Uri? _serverUri(String endpoint, {Map<String, String>? queryParameters}) {
     if (_saqgoApiBaseUrl.isEmpty) return null;
     final base = Uri.tryParse(_saqgoApiBaseUrl);
     if (base == null || !base.hasScheme) return null;

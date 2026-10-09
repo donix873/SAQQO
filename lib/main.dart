@@ -1,6 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:cryptography/cryptography.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:battery_plus/battery_plus.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import 'core/services/consent_service.dart';
+import 'core/services/hazard_service.dart';
+import 'core/services/route_risk_service.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -20,6 +30,7 @@ import 'core/services/mapkit_initializer.dart';
 import 'core/services/lifelog_store.dart';
 import 'core/services/routing_service.dart';
 import 'core/services/sensor_session_service.dart';
+import 'core/services/sensor_candidate_service.dart';
 import 'core/services/trip_track_service.dart';
 import 'features/map/arqalyk_map.dart';
 import 'l10n/app_localizations.dart';
@@ -40,22 +51,26 @@ class SaqgoApp extends StatefulWidget {
 class _SaqgoAppState extends State<SaqgoApp> {
   Locale _locale = const Locale('ru');
   var _stage = 0;
+  var _storageError = false;
 
   @override
   void initState() {
     super.initState();
     _restoreLaunchState();
-    LifeLogStore.restore();
+    LifeLogStore.restore().catchError((Object _) {
+      if (mounted) setState(() => _storageError = true);
+    });
+    ConsentService.restore();
+    HazardService.restorePreferences();
   }
 
   Future<void> _restoreLaunchState() async {
-    final saved = (await SharedPreferences.getInstance()).getString(
-      'saqgo_locale',
-    );
+    final preferences = await SharedPreferences.getInstance();
+    final saved = preferences.getString('saqgo_locale');
     if (!mounted || saved == null) return;
     setState(() {
       _locale = Locale(saved);
-      _stage = 2;
+      _stage = preferences.getBool('saqgo_onboarding_complete') == true ? 2 : 0;
     });
   }
 
@@ -70,6 +85,7 @@ class _SaqgoAppState extends State<SaqgoApp> {
   Future<void> _restartFirstRun() async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove('saqgo_locale');
+    await preferences.remove('saqgo_onboarding_complete');
     if (mounted) setState(() => _stage = 0);
   }
 
@@ -86,12 +102,45 @@ class _SaqgoAppState extends State<SaqgoApp> {
       GlobalWidgetsLocalizations.delegate,
       GlobalCupertinoLocalizations.delegate,
     ],
+    builder: (ctx, child) => _storageError
+        ? Column(
+            children: [
+              SafeArea(
+                bottom: false,
+                child: Material(
+                  color: SaqgoColors.surface,
+                  child: ListTile(
+                    title: Text(AppLocalizations.of(ctx)!.sessionSaveFailed),
+                    trailing: IconButton(
+                      tooltip: AppLocalizations.of(ctx)!.retry,
+                      onPressed: () async {
+                        try {
+                          await LifeLogStore.restore();
+                          if (mounted) setState(() => _storageError = false);
+                        } catch (_) {}
+                      },
+                      icon: const Icon(Icons.refresh),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(child: child ?? const SizedBox()),
+            ],
+          )
+        : child ?? const SizedBox(),
     home: switch (_stage) {
       0 => LanguagePage(
         onLocaleSelected: _setLocale,
         onStarted: () => setState(() => _stage = 1),
       ),
-      1 => OnboardingPage(onFinished: () => setState(() => _stage = 2)),
+      1 => OnboardingPage(
+        onFinished: () async {
+          final preferences = await SharedPreferences.getInstance();
+          await preferences.setString('saqgo_locale', _locale.languageCode);
+          await preferences.setBool('saqgo_onboarding_complete', true);
+          if (mounted) setState(() => _stage = 2);
+        },
+      ),
       _ => HomeShell(
         locale: _locale,
         onLocaleChanged: _setLocale,
@@ -125,7 +174,11 @@ class LanguagePage extends StatelessWidget {
               const SizedBox(height: SaqgoSpacing.lg),
               const Text(
                 'SAQGO',
-                style: TextStyle(fontSize: 40, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  fontFamily: "SaqgoSans",
+                  fontSize: 40,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: SaqgoSpacing.sm),
               Text(l.chooseLanguage, style: SaqgoTypography.title),
@@ -297,6 +350,15 @@ class _HomeShellState extends State<HomeShell> {
       body: SafeArea(
         child: IndexedStack(index: _index, children: pages),
       ),
+      floatingActionButton: _index == 0
+          ? null
+          : FloatingActionButton.small(
+              heroTag: 'global-sos',
+              tooltip: l.sos,
+              onPressed: () => _push(context, const SosPage()),
+              backgroundColor: SaqgoColors.sos,
+              child: const SaqgoIcon('sos', color: SaqgoColors.navy),
+            ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (value) => setState(() => _index = value),
@@ -329,6 +391,33 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
+  @override
+  void initState() {
+    super.initState();
+    HazardService.items.addListener(_refresh);
+    HazardService.layers.addListener(_refresh);
+    HazardService.hidden.addListener(_refresh);
+    HazardService.unavailable.addListener(_refresh);
+  }
+
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    HazardService.items.removeListener(_refresh);
+    HazardService.layers.removeListener(_refresh);
+    HazardService.hidden.removeListener(_refresh);
+    HazardService.unavailable.removeListener(_refresh);
+    super.dispose();
+  }
+
+  bool get _presentationScene =>
+      HazardService.layers.value['demo'] == true &&
+      (kIsWeb
+          ? const String.fromEnvironment('YANDEX_JS_API_KEY').isEmpty
+          : !isMapkitReady);
   LatLng? _userLocation;
 
   void _setUserLocation(LocationAvailable location) {
@@ -342,7 +431,14 @@ class _MapPageState extends State<MapPage> {
     final l = AppLocalizations.of(context)!;
     return Stack(
       children: [
-        Positioned.fill(child: ArqalykMap(userLocation: _userLocation)),
+        Positioned.fill(
+          child: ArqalykMap(
+            userLocation: _userLocation,
+            hazards: HazardService.visible,
+            onHazardSelected: (hazard) =>
+                _push(context, RiskDetailsPage(hazard: hazard)),
+          ),
+        ),
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(SaqgoSpacing.md),
@@ -362,7 +458,10 @@ class _MapPageState extends State<MapPage> {
                               'SAQGO',
                               style: SaqgoTypography.cardTitle,
                             ),
-                            Text(l.mapSource, style: SaqgoTypography.label),
+                            Text(
+                              _presentationScene ? l.demoMap : l.mapSource,
+                              style: SaqgoTypography.label,
+                            ),
                           ],
                         ),
                       ),
@@ -389,51 +488,93 @@ class _MapPageState extends State<MapPage> {
                   ],
                 ),
                 const Spacer(),
-                GlassCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l.noVerifiedRisks, style: SaqgoTypography.cardTitle),
-                      const SizedBox(height: SaqgoSpacing.xs),
-                      Text(l.noVerifiedRisks, style: SaqgoTypography.body),
-                      const SizedBox(height: SaqgoSpacing.md),
-                      OutlinedButton.icon(
-                        onPressed: () =>
-                            _push(context, const RiskDetailsPage()),
-                        icon: const SaqgoIcon('hazards'),
-                        label: Text(l.hazards),
-                      ),
-                      TextButton.icon(
-                        onPressed: () => _push(context, const PulsePage()),
-                        icon: const SaqgoIcon('pulse'),
-                        label: Text(l.livePulse),
-                      ),
-                      const SizedBox(height: SaqgoSpacing.sm),
-                      Row(
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(context).height * 0.42,
+                  ),
+                  child: SingleChildScrollView(
+                    child: GlassCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: FilledButton.icon(
-                              onPressed: widget.onOpenRoutes,
-                              icon: const SaqgoIcon(
-                                'route',
-                                color: SaqgoColors.navy,
-                              ),
-                              label: Text(l.route),
-                            ),
+                          Text(
+                            HazardService.visible.isEmpty
+                                ? l.noVerifiedRisks
+                                : l.hazards,
+                            style: SaqgoTypography.cardTitle,
                           ),
-                          const SizedBox(width: SaqgoSpacing.sm),
-                          IconButton.filled(
-                            onPressed: () =>
-                                _push(context, const RecordingPage()),
-                            icon: const SaqgoIcon(
-                              'sensors',
-                              color: SaqgoColors.navy,
+                          const SizedBox(height: SaqgoSpacing.xs),
+                          if (HazardService.unavailable.value &&
+                              HazardService.layers.value['demo'] != true)
+                            Text(
+                              l.networkUnavailable,
+                              style: SaqgoTypography.body,
                             ),
-                            tooltip: l.scan,
+                          if (HazardService.layers.value['demo'] == true)
+                            Text(l.demo, style: SaqgoTypography.label),
+                          for (final hazard in HazardService.visible.take(2))
+                            ListTile(
+                              dense: true,
+                              title: Text(
+                                hazard.demo
+                                    ? '${l.demo} · ${_hazardTitle(l, hazard.category)}'
+                                    : l.hazards,
+                              ),
+                              onTap: () => _push(
+                                context,
+                                RiskDetailsPage(hazard: hazard),
+                              ),
+                            ),
+                          TextButton(
+                            onPressed: HazardService.refresh,
+                            child: Text(l.retry),
+                          ),
+                          const SizedBox(height: SaqgoSpacing.md),
+                          OutlinedButton.icon(
+                            onPressed: () => _push(
+                              context,
+                              RiskDetailsPage(
+                                hazard: HazardService.visible.isEmpty
+                                    ? null
+                                    : HazardService.visible.first,
+                              ),
+                            ),
+                            icon: const SaqgoIcon('hazards'),
+                            label: Text(l.hazards),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => _push(context, const PulsePage()),
+                            icon: const SaqgoIcon('pulse'),
+                            label: Text(l.livePulse),
+                          ),
+                          const SizedBox(height: SaqgoSpacing.sm),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: widget.onOpenRoutes,
+                                  icon: const SaqgoIcon(
+                                    'route',
+                                    color: SaqgoColors.navy,
+                                  ),
+                                  label: Text(l.route),
+                                ),
+                              ),
+                              const SizedBox(width: SaqgoSpacing.sm),
+                              IconButton.filled(
+                                onPressed: () =>
+                                    _push(context, const RecordingPage()),
+                                icon: const SaqgoIcon(
+                                  'sensors',
+                                  color: SaqgoColors.navy,
+                                ),
+                                tooltip: l.scan,
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -452,13 +593,6 @@ class LayersPage extends StatefulWidget {
 }
 
 class _LayersPageState extends State<LayersPage> {
-  final _layers = <String, bool>{
-    'roadBumps': false,
-    'potentialIce': false,
-    'hazards': true,
-    'livePulse': false,
-    'onlyVerified': true,
-  };
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -466,9 +600,14 @@ class _LayersPageState extends State<LayersPage> {
       title: l.layers,
       child: ListView(
         children: [
-          Text(l.sourceDemo, style: SaqgoTypography.body),
+          Text(
+            HazardService.layers.value['demo'] == true
+                ? l.sourceDemo
+                : l.eventSource,
+            style: SaqgoTypography.body,
+          ),
           const SizedBox(height: SaqgoSpacing.md),
-          for (final entry in _layers.entries)
+          for (final entry in HazardService.layers.value.entries)
             GlassCard(
               margin: const EdgeInsets.only(bottom: SaqgoSpacing.sm),
               child: SwitchListTile(
@@ -476,7 +615,7 @@ class _LayersPageState extends State<LayersPage> {
                 title: Text(_layerText(l, entry.key)),
                 value: entry.value,
                 onChanged: (value) =>
-                    setState(() => _layers[entry.key] = value),
+                    setState(() => HazardService.toggle(entry.key, value)),
               ),
             ),
           GlassCard(
@@ -485,7 +624,12 @@ class _LayersPageState extends State<LayersPage> {
               children: [
                 Text(l.sourceQuality, style: SaqgoTypography.cardTitle),
                 const SizedBox(height: SaqgoSpacing.xs),
-                Text(l.sourceDemo, style: SaqgoTypography.body),
+                Text(
+                  HazardService.layers.value['demo'] == true
+                      ? l.sourceDemo
+                      : l.eventSource,
+                  style: SaqgoTypography.body,
+                ),
               ],
             ),
           ),
@@ -495,34 +639,59 @@ class _LayersPageState extends State<LayersPage> {
   }
 
   String _layerText(AppLocalizations l, String key) => switch (key) {
-    'roadBumps' => l.roadBumps,
-    'potentialIce' => l.potentialIce,
-    'hazards' => l.hazards,
-    'livePulse' => l.livePulse,
+    'road_bump' => l.roadBumps,
+    'ice' => l.potentialIce,
+    'closure' => l.hazards,
+    'sidewalk' => l.walking,
+    'demo' => l.demo,
     _ => l.onlyVerified,
   };
 }
 
 class RiskDetailsPage extends StatelessWidget {
-  const RiskDetailsPage({super.key});
+  const RiskDetailsPage({super.key, this.hazard});
+  final Hazard? hazard;
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return SaqgoScaffold(
-      title: l.riskTitle,
+      title: hazard == null ? l.hazards : _hazardTitle(l, hazard!.category),
       child: ListView(
         children: [
-          const DemoMap(height: 190, showRoute: true),
+          SizedBox(
+            height: 190,
+            child: ArqalykMap(hazards: hazard == null ? const [] : [hazard!]),
+          ),
+          if (hazard?.demo == true)
+            Text(l.demo, style: SaqgoTypography.cardTitle),
           const SizedBox(height: SaqgoSpacing.md),
-          RiskChip(text: l.unverified),
+          RiskChip(
+            text: hazard?.status == 'verified' ? l.verified : l.unverified,
+          ),
           const SizedBox(height: SaqgoSpacing.md),
           GlassCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l.confidence, style: SaqgoTypography.cardTitle),
+                Text(
+                  hazard == null
+                      ? l.insufficientData
+                      : '${l.confidenceValue}: ${(hazard!.confidence * 100).round()}%',
+                  style: SaqgoTypography.cardTitle,
+                ),
                 const SizedBox(height: SaqgoSpacing.xs),
-                Text(l.lastUpdated, style: SaqgoTypography.body),
+                Text(
+                  '${l.eventSource}: ${hazard?.demo == true ? l.demo : hazard?.source ?? l.insufficientData}',
+                ),
+                Text(
+                  hazard?.updatedAt == null
+                      ? l.lastUpdated
+                      : '${l.eventTime}: ${MaterialLocalizations.of(context).formatMediumDate(hazard!.updatedAt!.toLocal())}',
+                ),
+                if (hazard != null)
+                  Text(
+                    '${l.accuracy}: ${hazard!.accuracyMeters.round()} ${l.meters}',
+                  ),
                 const SizedBox(height: SaqgoSpacing.md),
                 FilledButton.icon(
                   onPressed: () => _push(context, const RoutePlannerPage()),
@@ -530,7 +699,10 @@ class RiskDetailsPage extends StatelessWidget {
                   label: Text(l.openRoute),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () {
+                    if (hazard != null) HazardService.hide(hazard!.id);
+                    Navigator.of(context).pop();
+                  },
                   child: Text(l.hideMarker),
                 ),
               ],
@@ -550,11 +722,19 @@ class RecordingPage extends StatefulWidget {
 
 enum RecordingState { idle, active, paused }
 
-class _RecordingPageState extends State<RecordingPage> {
+class _RecordingPageState extends State<RecordingPage>
+    with WidgetsBindingObserver {
   RecordingState _state = RecordingState.idle;
   final _session = SensorSessionService();
   final _track = TripTrackService();
   var _candidateCount = 0;
+  final _recordedCandidates = <StoredCandidate>[];
+  LocationAvailable? _latestLocation;
+  DateTime? _latestLocationAt;
+  StreamSubscription<VibrationCandidate>? _candidateSubscription;
+  Timer? _batteryCheck;
+  StreamSubscription<ServiceStatus>? _serviceSubscription;
+  bool _transitioning = false;
   StreamSubscription<LocationAvailable>? _positionSubscription;
   double? _gpsAccuracyMeters;
   DateTime? _startedAt;
@@ -565,42 +745,146 @@ class _RecordingPageState extends State<RecordingPage> {
   @override
   void initState() {
     super.initState();
-    _session.candidates.listen((_) {
+    WidgetsBinding.instance.addObserver(this);
+    ConsentService.recording.addListener(_consentChanged);
+    _candidateSubscription = _session.candidates.listen((candidate) {
+      final location = _latestLocation;
+      if (_state != RecordingState.active ||
+          location == null ||
+          location.accuracyMeters > 65 ||
+          _latestLocationAt == null ||
+          DateTime.now().difference(_latestLocationAt!).inSeconds > 15 ||
+          _recordedCandidates.length >= 1000) {
+        return;
+      }
+      _recordedCandidates.add(
+        StoredCandidate(
+          timestamp: candidate.timestamp,
+          confidence: candidate.confidence,
+          accuracyMeters: location.accuracyMeters,
+          latitude: location.latitude,
+          longitude: location.longitude,
+        ),
+      );
       if (mounted) setState(() => _candidateCount++);
+    }, onError: (Object _) => _interrupt());
+    try {
+      _serviceSubscription = Geolocator.getServiceStatusStream().listen((
+        status,
+      ) {
+        if (status == ServiceStatus.disabled) _interrupt();
+      }, onError: (Object _) => _interrupt());
+    } catch (_) {}
+    _batteryCheck = Timer.periodic(const Duration(seconds: 30), (_) async {
+      if (_state != RecordingState.active) return;
+      try {
+        if (await Battery().batteryLevel <= 15) _interrupt(lowBattery: true);
+      } catch (_) {}
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    ConsentService.recording.removeListener(_consentChanged);
+    _candidateSubscription?.cancel();
+    _batteryCheck?.cancel();
+    _serviceSubscription?.cancel();
     _clock?.cancel();
     _positionSubscription?.cancel();
     _session.dispose();
     super.dispose();
   }
 
+  void _consentChanged() {
+    if (!ConsentService.recording.value) _interrupt();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _interrupt();
+  }
+
+  Future<void> _interrupt({bool lowBattery = false}) async {
+    if (_state != RecordingState.active) return;
+    await _session.pause();
+    await _positionSubscription?.cancel();
+    _positionSubscription = null;
+    _track.pause();
+    _pauseClock();
+    if (mounted) {
+      setState(() => _state = RecordingState.paused);
+      final l = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(lowBattery ? l.lowBattery : l.recordingInterrupted),
+        ),
+      );
+    }
+  }
+
   Future<void> _toggle() async {
-    if (_state == RecordingState.active) {
-      await _session.pause();
-      await _positionSubscription?.cancel();
-      _positionSubscription = null;
-      _track.pause();
-      _pauseClock();
-      if (mounted) setState(() => _state = RecordingState.paused);
-      return;
+    if (_transitioning) return;
+    setState(() => _transitioning = true);
+    try {
+      if (_state == RecordingState.active) {
+        await _interrupt();
+        return;
+      }
+      final l = AppLocalizations.of(context)!;
+      if (!ConsentService.recording.value) {
+        final accepted = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(l.recordingPermission),
+            content: Text(l.recordingConsent),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l.consentConfirm),
+              ),
+            ],
+          ),
+        );
+        if (accepted != true) return;
+        await ConsentService.setRecording(true);
+      }
+      final location = await LocationService().requestCurrentLocation();
+      if (!mounted) return;
+      if (location is! LocationAvailable || location.accuracyMeters > 65) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.gpsDisabled)));
+        return;
+      }
+      if (_state == RecordingState.paused) {
+        _track.resume();
+      } else {
+        _track.start();
+      }
+      _startedAt ??= DateTime.now();
+      _activeSince = DateTime.now();
+      setState(() => _state = RecordingState.active);
+      _addLocationSample(location);
+      _positionSubscription = LocationService().positionUpdates().listen(
+        _addLocationSample,
+        onError: (Object _) => _interrupt(),
+      );
+      await _session.start();
+      _clock = Timer.periodic(const Duration(seconds: 1), (_) async {
+        if (!mounted) return;
+        setState(() {});
+        if (!await LocationService().hasLocationPermission()) _interrupt();
+      });
+    } catch (_) {
+      await _interrupt();
+    } finally {
+      if (mounted) setState(() => _transitioning = false);
     }
-    await _session.start();
-    if (_state == RecordingState.paused) {
-      _track.resume();
-    } else {
-      _track.start();
-    }
-    _startedAt ??= DateTime.now();
-    _activeSince = DateTime.now();
-    _clock ??= Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
-    if (mounted) setState(() => _state = RecordingState.active);
-    unawaited(_beginLocationTracking());
   }
 
   Future<void> _finish() async {
@@ -614,6 +898,7 @@ class _RecordingPageState extends State<RecordingPage> {
       startedAt: _startedAt!,
       duration: _elapsed,
       candidateCount: _candidateCount,
+      candidates: List.unmodifiable(_recordedCandidates),
       distanceMeters: track.distanceMeters,
       trackPointCount: track.points.length,
       trackPoints: track.points
@@ -621,6 +906,9 @@ class _RecordingPageState extends State<RecordingPage> {
             (point) => StoredTrackPoint(
               latitude: point.latitude,
               longitude: point.longitude,
+              accuracyMeters: point.accuracyMeters,
+              recordedAt: point.recordedAt,
+              segmentStart: point.segmentStart,
             ),
           )
           .toList(growable: false),
@@ -628,20 +916,13 @@ class _RecordingPageState extends State<RecordingPage> {
     if (mounted) _pushReplacement(context, TripResultPage(record: record));
   }
 
-  Future<void> _beginLocationTracking() async {
-    final locationService = LocationService();
-    final current = await locationService.requestCurrentLocation();
-    if (!mounted || _state != RecordingState.active) return;
-    if (current is LocationAvailable) {
-      _addLocationSample(current);
-      _positionSubscription = locationService.positionUpdates().listen(
-        _addLocationSample,
-        onError: (_) {},
-      );
-    }
-  }
-
   void _addLocationSample(LocationAvailable location) {
+    if (_track.isFull) {
+      _interrupt();
+      return;
+    }
+    _latestLocation = location;
+    _latestLocationAt = DateTime.now();
     _track.addSample(
       latitude: location.latitude,
       longitude: location.longitude,
@@ -726,7 +1007,7 @@ class _RecordingPageState extends State<RecordingPage> {
           Text(status, style: SaqgoTypography.body),
           const SizedBox(height: SaqgoSpacing.md),
           FilledButton.icon(
-            onPressed: _toggle,
+            onPressed: _transitioning ? null : _toggle,
             icon: SaqgoIcon(
               _state == RecordingState.active ? 'pause' : 'play',
               color: SaqgoColors.navy,
@@ -741,7 +1022,9 @@ class _RecordingPageState extends State<RecordingPage> {
           ),
           const SizedBox(height: SaqgoSpacing.sm),
           OutlinedButton.icon(
-            onPressed: _state == RecordingState.idle ? null : _finish,
+            onPressed: _state == RecordingState.idle || _transitioning
+                ? null
+                : _finish,
             icon: const SaqgoIcon('stop'),
             label: Text(l.stop),
           ),
@@ -765,16 +1048,27 @@ class TripResultPage extends StatelessWidget {
         children: [
           SizedBox(
             height: 200,
-            child: ArqalykMap(routePoints: record.routePoints),
+            child: ArqalykMap(
+              routePoints: record.routePoints,
+              routeSegments: record.routeSegments,
+            ),
           ),
           const SizedBox(height: SaqgoSpacing.md),
-          GlassCard(child: Text(l.noEvents, style: SaqgoTypography.body)),
+          CandidateSummary(record: record),
           const SizedBox(height: SaqgoSpacing.md),
           FilledButton(
             onPressed: () async {
-              await LifeLogStore.add(record);
-              if (context.mounted) {
-                Navigator.of(context).popUntil((route) => route.isFirst);
+              try {
+                await LifeLogStore.add(record);
+                if (context.mounted) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                }
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(l.sessionSaveFailed)));
+                }
               }
             },
             child: Text(l.saveLocal),
@@ -802,6 +1096,8 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
   final _fromController = TextEditingController();
   final _toController = TextEditingController();
   final _routing = RoutingService();
+  String _mode = "walking";
+  bool _demoRoute = false;
   PlaceResult? _from;
   PlaceResult? _to;
   List<RouteResult> _routes = const [];
@@ -858,18 +1154,45 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
 
   Future<void> _buildRoute() async {
     final l = AppLocalizations.of(context)!;
-    if (_from == null || _to == null) {
+    if (_loading) return;
+    if (_fromController.text.trim().isEmpty ||
+        _toController.text.trim().isEmpty) {
       _showMessage(l.enterStartAndEnd);
       return;
     }
     setState(() => _loading = true);
-    final routes = await _routing.buildRoutes(
-      from: _from!.position,
-      to: _to!.position,
+    final places = await Future.wait([
+      _from != null
+          ? Future.value(_from)
+          : _routing.searchPlace(_fromController.text),
+      _to != null
+          ? Future.value(_to)
+          : _routing.searchPlace(_toController.text),
+    ]);
+    if (!mounted) return;
+    if (places.any((place) => place == null)) {
+      setState(() => _loading = false);
+      _showMessage(l.routeUnavailable);
+      return;
+    }
+    setState(() {
+      _from = places[0];
+      _to = places[1];
+      _fromController.text = _from!.name;
+      _toController.text = _to!.name;
+    });
+    final routes = List<RouteResult>.of(
+      await _routing.buildRoutes(
+        from: _from!.position,
+        to: _to!.position,
+        mode: _mode,
+      ),
     );
     if (!mounted) return;
     setState(() {
       _loading = false;
+      _demoRoute = false;
+      routes.sort((a, b) => a.duration.compareTo(b.duration));
       _routes = routes;
       _selectedRoute = 0;
     });
@@ -887,6 +1210,51 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
       title: l.routePlanner,
       child: ListView(
         children: [
+          SegmentedButton<String>(
+            segments: [
+              ButtonSegment(
+                value: 'walking',
+                label: Text(l.walking),
+                icon: const Icon(Icons.directions_walk),
+              ),
+              ButtonSegment(
+                value: 'driving',
+                label: Text(l.driving),
+                icon: const Icon(Icons.directions_car),
+              ),
+            ],
+            selected: {_mode},
+            onSelectionChanged: _loading
+                ? null
+                : (values) => setState(() {
+                    _mode = values.first;
+                    _routes = [];
+                  }),
+          ),
+          if (HazardService.layers.value['demo'] == true)
+            TextButton(
+              onPressed: () => setState(() {
+                _demoRoute = true;
+                _fromController.text = l.testPointA;
+                _toController.text = l.testPointB;
+                _selectedRoute = 0;
+                _routes = [
+                  const RouteResult(
+                    points: [
+                      LatLng(50.2486, 66.9203),
+                      LatLng(50.250, 66.922),
+                      LatLng(50.252, 66.924),
+                    ],
+                    distanceMeters: 1200,
+                    duration: Duration(minutes: 12),
+                    demo: true,
+                  ),
+                ];
+              }),
+              child: Text(l.demoRoute),
+            ),
+          if (_demoRoute) Text(l.demoMap, style: SaqgoTypography.label),
+          const SizedBox(height: SaqgoSpacing.md),
           TextField(
             controller: _fromController,
             decoration: InputDecoration(
@@ -948,17 +1316,30 @@ class _RoutePlannerPageState extends State<RoutePlannerPage> {
             Padding(
               padding: const EdgeInsets.only(bottom: SaqgoSpacing.sm),
               child: RouteChoice(
-                title: index == 0 ? l.faster : l.alternativeRoute,
+                title: index == 0
+                    ? l.faster
+                    : RouteRiskService.knownRisks(
+                            _routes[index].points,
+                            HazardService.items.value,
+                          ) <
+                          RouteRiskService.knownRisks(
+                            _routes.first.points,
+                            HazardService.items.value,
+                          )
+                    ? l.lessKnownRisk
+                    : l.alternativeRoute,
+                riskCount: RouteRiskService.knownRisks(
+                  _routes[index].points,
+                  HazardService.items.value,
+                ),
                 duration: _durationLabel(_routes[index].duration),
-                distance: _distanceLabel(_routes[index].distanceMeters),
+                distance: _distanceLabel(_routes[index].distanceMeters, l),
                 selected: _selectedRoute == index,
                 onTap: () => setState(() => _selectedRoute = index),
               ),
             ),
           const SizedBox(height: SaqgoSpacing.md),
-          Text(l.routeSource, style: SaqgoTypography.body),
-          const SizedBox(height: SaqgoSpacing.xs),
-          Text(l.riskDisclaimer, style: SaqgoTypography.body),
+          Text(l.insufficientData, style: SaqgoTypography.label),
           const SizedBox(height: SaqgoSpacing.md),
           FilledButton.icon(
             onPressed: _routes.isEmpty
@@ -989,13 +1370,14 @@ class NavigationPage extends StatefulWidget {
 }
 
 class _NavigationPageState extends State<NavigationPage> {
+  final _hazardAlerts = HazardAlertService();
   StreamSubscription<LocationAvailable>? _locationSubscription;
   LatLng? _userLocation;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_startPositionTracking());
+    if (!widget.route.demo) unawaited(_startPositionTracking());
   }
 
   @override
@@ -1018,6 +1400,27 @@ class _NavigationPageState extends State<NavigationPage> {
   }
 
   void _setPosition(LocationAvailable location) {
+    if (mounted && ConsentService.alerts.value) {
+      final alerts = _hazardAlerts.update(
+        LatLng(location.latitude, location.longitude),
+        location.accuracyMeters,
+        DateTime.now(),
+        HazardService.visible,
+      );
+      if (alerts.isNotEmpty) {
+        final l = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l.alertNearby} ${alerts.first.source}'),
+            action: SnackBarAction(
+              label: l.hazards,
+              onPressed: () =>
+                  _push(context, RiskDetailsPage(hazard: alerts.first)),
+            ),
+          ),
+        );
+      }
+    }
     if (mounted) {
       setState(
         () => _userLocation = LatLng(location.latitude, location.longitude),
@@ -1037,6 +1440,7 @@ class _NavigationPageState extends State<NavigationPage> {
             child: ArqalykMap(
               routePoints: widget.route.points,
               userLocation: _userLocation,
+              hazards: HazardService.visible,
             ),
           ),
           const SizedBox(height: SaqgoSpacing.md),
@@ -1044,9 +1448,12 @@ class _NavigationPageState extends State<NavigationPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l.nextTurn, style: SaqgoTypography.cardTitle),
+                Text(
+                  widget.route.demo ? l.demoMap : l.nextTurn,
+                  style: SaqgoTypography.cardTitle,
+                ),
                 const SizedBox(height: SaqgoSpacing.xs),
-                Text(l.riskDisclaimer, style: SaqgoTypography.body),
+                Text(l.insufficientData, style: SaqgoTypography.label),
               ],
             ),
           ),
@@ -1061,8 +1468,14 @@ class _NavigationPageState extends State<NavigationPage> {
   }
 }
 
-class PulsePage extends StatelessWidget {
+class PulsePage extends StatefulWidget {
   const PulsePage({super.key});
+  @override
+  State<PulsePage> createState() => _PulsePageState();
+}
+
+class _PulsePageState extends State<PulsePage> {
+  int _period = 1;
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -1070,7 +1483,34 @@ class PulsePage extends StatelessWidget {
       title: l.pulseTitle,
       child: ListView(
         children: [
+          Chip(label: Text(l.demo), avatar: const Icon(Icons.science_outlined)),
+          const SizedBox(height: SaqgoSpacing.sm),
           const PulseGrid(),
+          const SizedBox(height: SaqgoSpacing.md),
+          SegmentedButton<int>(
+            segments: [
+              ButtonSegment(value: 0, label: Text(l.pulseMorning)),
+              ButtonSegment(value: 1, label: Text(l.pulseAfternoon)),
+              ButtonSegment(value: 2, label: Text(l.pulseEvening)),
+            ],
+            selected: {_period},
+            onSelectionChanged: (values) =>
+                setState(() => _period = values.first),
+          ),
+          const SizedBox(height: SaqgoSpacing.md),
+          GlassCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l.syntheticZone, style: SaqgoTypography.cardTitle),
+                const SizedBox(height: 8),
+                Text(
+                  '${l.demo}: ${[12, 24, 18][_period]} · ${l.syntheticDensity}',
+                  style: SaqgoTypography.body,
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: SaqgoSpacing.md),
           GlassCard(child: Text(l.pulseBody, style: SaqgoTypography.body)),
         ],
@@ -1079,8 +1519,31 @@ class PulsePage extends StatelessWidget {
   }
 }
 
-class HistoryPage extends StatelessWidget {
+class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
+  Future<void> _confirmDelete(BuildContext context) =>
+      _HistoryPageState.confirmDelete(context);
+  @override
+  State<HistoryPage> createState() => _HistoryPageState();
+}
+
+class _HistoryPageState extends State<HistoryPage> {
+  DateTime? _selectedDay;
+  @override
+  void initState() {
+    super.initState();
+    HazardService.layers.addListener(_changed);
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    HazardService.layers.removeListener(_changed);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1090,12 +1553,78 @@ class HistoryPage extends StatelessWidget {
       child: ListView(
         children: [
           Text(l.localOnly, style: SaqgoTypography.body),
+          if (HazardService.layers.value['demo'] == true)
+            TextButton.icon(
+              onPressed: () async {
+                final now = DateTime.now();
+                final sample = TripRecord(
+                  id: 'demo-${now.microsecondsSinceEpoch}',
+                  startedAt: now,
+                  duration: const Duration(minutes: 12),
+                  candidateCount: 1,
+                  distanceMeters: 1200,
+                  trackPointCount: 3,
+                  demo: true,
+                  trackPoints: const [
+                    StoredTrackPoint(latitude: 50.2486, longitude: 66.9203),
+                    StoredTrackPoint(latitude: 50.250, longitude: 66.922),
+                    StoredTrackPoint(latitude: 50.252, longitude: 66.924),
+                  ],
+                  candidates: [
+                    StoredCandidate(
+                      timestamp: now,
+                      confidence: .4,
+                      accuracyMeters: 20,
+                      latitude: 50.250,
+                      longitude: 66.922,
+                    ),
+                  ],
+                );
+                try {
+                  await LifeLogStore.add(sample);
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l.sessionSaveFailed)),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: Text(l.createDemoTrip),
+            ),
           const SizedBox(height: SaqgoSpacing.md),
           ValueListenableBuilder<List<TripRecord>>(
             valueListenable: LifeLogStore.trips,
             builder: (context, trips, _) => Column(
               children: [
-                CalendarCard(trips: trips),
+                CalendarCard(
+                  trips: trips,
+                  onDaySelected: (date) => setState(() => _selectedDay = date),
+                ),
+                if (_selectedDay != null)
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      TextButton(
+                        onPressed: () => setState(() => _selectedDay = null),
+                        child: Text(l.showAllDays),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          if (await _confirmAction(
+                            context,
+                            l.deleteDay,
+                            l.deleteHistoryBody,
+                          )) {
+                            await LifeLogStore.removeDay(_selectedDay!);
+                            if (mounted) setState(() => _selectedDay = null);
+                          }
+                        },
+                        child: Text(l.deleteDay),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: SaqgoSpacing.md),
                 if (trips.isEmpty)
                   EmptyState(
@@ -1105,7 +1634,11 @@ class HistoryPage extends StatelessWidget {
                     actionLabel: l.startRecording,
                   )
                 else
-                  for (final trip in trips)
+                  for (final trip in trips.where(
+                    (trip) =>
+                        _selectedDay == null ||
+                        DateUtils.isSameDay(trip.startedAt, _selectedDay),
+                  ))
                     Padding(
                       padding: const EdgeInsets.only(bottom: SaqgoSpacing.sm),
                       child: TripCard(
@@ -1117,7 +1650,7 @@ class HistoryPage extends StatelessWidget {
                 const SizedBox(height: SaqgoSpacing.md),
                 OutlinedButton.icon(
                   onPressed: trips.isNotEmpty
-                      ? () => _confirmDelete(context)
+                      ? () => confirmDelete(context)
                       : null,
                   icon: const SaqgoIcon('delete', color: SaqgoColors.sos),
                   label: Text(l.deleteHistory),
@@ -1130,7 +1663,7 @@ class HistoryPage extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context) async {
+  static Future<void> confirmDelete(BuildContext context) async {
     final l = AppLocalizations.of(context)!;
     await showDialog<void>(
       context: context,
@@ -1165,9 +1698,13 @@ class SessionDetailsPage extends StatelessWidget {
       title: l.sessionDetails,
       child: ListView(
         children: [
+          if (record.demo) Text(l.demo, style: SaqgoTypography.cardTitle),
           SizedBox(
             height: 240,
-            child: ArqalykMap(routePoints: record.routePoints),
+            child: ArqalykMap(
+              routePoints: record.routePoints,
+              routeSegments: record.routeSegments,
+            ),
           ),
           const SizedBox(height: SaqgoSpacing.md),
           GlassCard(
@@ -1182,14 +1719,35 @@ class SessionDetailsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: SaqgoSpacing.xs),
                 Text(
-                  '${_durationLabel(record.duration)} · ${_distanceLabel(record.distanceMeters)} · ${record.candidateCount} ${l.candidates.toLowerCase()}',
+                  '${_durationLabel(record.duration)} · ${_distanceLabel(record.distanceMeters, l)} · ${record.candidateCount} ${l.candidates.toLowerCase()}',
                   style: SaqgoTypography.body,
                 ),
               ],
             ),
           ),
           const SizedBox(height: SaqgoSpacing.md),
-          Text(l.noEvents, style: SaqgoTypography.body),
+          CandidateSummary(record: record),
+          const SizedBox(height: SaqgoSpacing.md),
+          FilledButton.icon(
+            onPressed: () => _exportTrip(context, record),
+            icon: const Icon(Icons.ios_share),
+            label: Text(l.exportTrip),
+          ),
+          TextButton.icon(
+            onPressed: () async {
+              final accepted = await _confirmAction(
+                context,
+                l.deleteTrip,
+                l.deleteHistoryBody,
+              );
+              if (accepted) {
+                await LifeLogStore.remove(record.id);
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            icon: const SaqgoIcon('delete'),
+            label: Text(l.deleteTrip),
+          ),
         ],
       ),
     );
@@ -1206,11 +1764,14 @@ class SosPage extends StatefulWidget {
 class _SosPageState extends State<SosPage> {
   LocationAvailable? _location;
   var _loadingLocation = false;
+  DateTime? _locationAt;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_refreshLocation());
+    LocationService().hasLocationPermission().then((enabled) {
+      if (enabled && mounted) _refreshLocation();
+    });
   }
 
   Future<void> _refreshLocation() async {
@@ -1220,6 +1781,7 @@ class _SosPageState extends State<SosPage> {
     setState(() {
       _loadingLocation = false;
       _location = result is LocationAvailable ? result : null;
+      _locationAt = _location == null ? null : DateTime.now();
     });
   }
 
@@ -1252,7 +1814,11 @@ class _SosPageState extends State<SosPage> {
           const Center(
             child: Text(
               '112',
-              style: TextStyle(fontSize: 58, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                fontFamily: "SaqgoSans",
+                fontSize: 58,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           const SizedBox(height: SaqgoSpacing.md),
@@ -1268,10 +1834,14 @@ class _SosPageState extends State<SosPage> {
                       : '${_location!.latitude.toStringAsFixed(6)}, ${_location!.longitude.toStringAsFixed(6)}',
                   style: SaqgoTypography.body,
                 ),
+                if (_locationAt != null)
+                  Text(
+                    '${l.eventTime}: ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(_locationAt!))}',
+                  ),
                 if (_location != null) ...[
                   const SizedBox(height: SaqgoSpacing.xs),
                   Text(
-                    '${l.accuracy}: ${_location!.accuracyMeters.round()} m',
+                    '${l.accuracy}: ${_location!.accuracyMeters.round()} ${l.meters}',
                     style: SaqgoTypography.label,
                   ),
                 ],
@@ -1338,7 +1908,10 @@ class _SosPageState extends State<SosPage> {
                     backgroundColor: SaqgoColors.surfaceMuted,
                     child: Text(
                       '${[l.callStep1, l.callStep2, l.callStep3].indexOf(step) + 1}',
-                      style: const TextStyle(color: SaqgoColors.cyan),
+                      style: const TextStyle(
+                        fontFamily: "SaqgoSans",
+                        color: SaqgoColors.cyan,
+                      ),
                     ),
                   ),
                   const SizedBox(width: SaqgoSpacing.sm),
@@ -1434,7 +2007,7 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 Text(l.privacy, style: SaqgoTypography.cardTitle),
                 const SizedBox(height: SaqgoSpacing.xs),
-                Text(l.privacyBody, style: SaqgoTypography.body),
+                Text(l.privacyPolicy, style: SaqgoTypography.body),
               ],
             ),
           ),
@@ -1449,10 +2022,59 @@ class _SettingsPageState extends State<SettingsPage> {
                 : l.off,
             onTap: _checkingLocation ? null : _enableLocation,
           ),
-          SettingsTile(
-            icon: 'alert',
-            title: l.notifications,
-            subtitle: l.comingSoon,
+          ValueListenableBuilder<bool>(
+            valueListenable: ConsentService.alerts,
+            builder: (ctx, enabled, _) => SwitchListTile(
+              title: Text(l.notifications),
+              subtitle: Text(l.alertNearby),
+              value: enabled,
+              onChanged: ConsentService.setAlerts,
+            ),
+          ),
+          ValueListenableBuilder<bool>(
+            valueListenable: ConsentService.recording,
+            builder: (ctx, enabled, _) => SwitchListTile(
+              title: Text(l.recordingPermission),
+              value: enabled,
+              onChanged: (value) async {
+                if (!value) {
+                  await ConsentService.setRecording(false);
+                  return;
+                }
+                final accepted = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l.recordingPermission),
+                    content: Text(l.recordingConsent),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text(l.cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: Text(l.consentConfirm),
+                      ),
+                    ],
+                  ),
+                );
+                if (accepted == true) await ConsentService.setRecording(true);
+              },
+            ),
+          ),
+          ValueListenableBuilder<Map<String, bool>>(
+            valueListenable: HazardService.layers,
+            builder: (ctx, layers, _) => SwitchListTile(
+              title: Text(l.demo),
+              subtitle: Text(l.sourceDemo),
+              value: layers['demo'] ?? false,
+              onChanged: (value) => HazardService.toggle('demo', value),
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed: () => const HistoryPage()._confirmDelete(context),
+            icon: const SaqgoIcon('delete'),
+            label: Text(l.deleteHistory),
           ),
           SettingsTile(
             icon: 'sensors',
@@ -1493,11 +2115,6 @@ class _SettingsPageState extends State<SettingsPage> {
             label: Text(l.restartFirstRun),
           ),
           const SizedBox(height: SaqgoSpacing.md),
-          OutlinedButton.icon(
-            onPressed: () => _push(context, const AdminPage()),
-            icon: const SaqgoIcon('profile'),
-            label: Text('S15 · ${l.admin}'),
-          ),
           const SizedBox(height: SaqgoSpacing.lg),
           Text(l.version, style: SaqgoTypography.label),
         ],
@@ -1514,8 +2131,7 @@ class AdminPage extends StatefulWidget {
 }
 
 class _AdminPageState extends State<AdminPage> {
-  late final Future<BackendStatus> _status =
-      BackendStatusService().check();
+  late final Future<BackendStatus> _status = BackendStatusService().check();
 
   @override
   Widget build(BuildContext context) {
@@ -1550,7 +2166,7 @@ class _AdminPageState extends State<AdminPage> {
                         enabled: status?.routing ?? false,
                       ),
                       _StatusRow(
-                        label: 'Distance Matrix',
+                        label: l.distanceMatrix,
                         enabled: status?.distanceMatrix ?? false,
                       ),
                       const SizedBox(height: SaqgoSpacing.xs),
@@ -1679,8 +2295,7 @@ class SaqgoIcon extends StatelessWidget {
   final Color color;
   final double size;
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: name,
+  Widget build(BuildContext context) => ExcludeSemantics(
     child: SvgPicture.asset(
       'assets/icons/$name.svg',
       width: size,
@@ -1708,7 +2323,7 @@ class _LocateButtonState extends State<LocateButton> {
     final message = switch (result) {
       LocationAvailable(:final accuracyMeters) => () {
         widget.onLocated?.call(result);
-        return 'GPS ${accuracyMeters.round()} m';
+        return 'GPS ${accuracyMeters.round()} ${l.meters}';
       }(),
       LocationDisabled() || LocationDenied() => l.gpsDisabled,
       LocationUnavailable() => l.mapUnavailable,
@@ -1897,7 +2512,11 @@ class Metric extends StatelessWidget {
       Text(label, style: SaqgoTypography.label),
       Text(
         value,
-        style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w500),
+        style: const TextStyle(
+          fontFamily: "SaqgoSans",
+          fontSize: 36,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     ],
   );
@@ -1974,12 +2593,14 @@ class RouteChoice extends StatelessWidget {
   const RouteChoice({
     super.key,
     required this.title,
+    this.riskCount = 0,
     required this.duration,
     required this.distance,
     this.selected = false,
     this.onTap,
   });
   final String title, duration, distance;
+  final int riskCount;
   final bool selected;
   final VoidCallback? onTap;
   @override
@@ -2002,6 +2623,10 @@ class RouteChoice extends StatelessWidget {
               children: [
                 Text(title, style: SaqgoTypography.cardTitle),
                 Text(distance, style: SaqgoTypography.label),
+                Text(
+                  '${AppLocalizations.of(context)!.knownRisks}: $riskCount',
+                  style: SaqgoTypography.label,
+                ),
               ],
             ),
           ),
@@ -2036,60 +2661,96 @@ class EmptyState extends StatelessWidget {
   );
 }
 
-class CalendarCard extends StatelessWidget {
-  const CalendarCard({super.key, required this.trips});
-
+class CalendarCard extends StatefulWidget {
+  const CalendarCard({super.key, required this.trips, this.onDaySelected});
   final List<TripRecord> trips;
+  final ValueChanged<DateTime>? onDaySelected;
+  @override
+  State<CalendarCard> createState() => _CalendarCardState();
+}
 
+class _CalendarCardState extends State<CalendarCard> {
+  late DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+  DateTime? _selected;
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final month = DateTime(now.year, now.month);
-    final days = DateUtils.getDaysInMonth(month.year, month.month);
-    final tripDays = trips
+    final l = AppLocalizations.of(context)!;
+    final local = MaterialLocalizations.of(context);
+    final days = DateUtils.getDaysInMonth(_month.year, _month.month);
+    final offset = (_month.weekday - local.firstDayOfWeekIndex - 1 + 7) % 7;
+    final marked = widget.trips
         .where(
-          (trip) =>
-              trip.startedAt.year == month.year &&
-              trip.startedAt.month == month.month,
+          (t) =>
+              t.startedAt.year == _month.year &&
+              t.startedAt.month == _month.month,
         )
-        .map((trip) => trip.startedAt.day)
+        .map((t) => t.startedAt.day)
         .toSet();
-
     return GlassCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            MaterialLocalizations.of(context).formatMonthYear(month),
-            style: SaqgoTypography.cardTitle,
-          ),
-          const SizedBox(height: SaqgoSpacing.sm),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: List.generate(days, (index) {
-              final day = index + 1;
-              final hasTrip = tripDays.contains(day);
-              final isToday = day == now.day;
-              return Container(
-                width: 26,
-                height: 26,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: hasTrip ? SaqgoColors.blue : Colors.transparent,
-                  border: isToday
-                      ? Border.all(color: SaqgoColors.blue)
-                      : null,
-                  borderRadius: BorderRadius.circular(9),
+          Row(
+            children: [
+              IconButton(
+                tooltip: l.previousMonth,
+                onPressed: () => setState(
+                  () => _month = DateTime(_month.year, _month.month - 1),
                 ),
+                icon: const Icon(Icons.chevron_left),
+              ),
+              Expanded(
                 child: Text(
-                  '$day',
-                  style: TextStyle(
-                    color: hasTrip ? SaqgoColors.navy : SaqgoColors.text,
-                  ),
+                  local.formatMonthYear(_month),
+                  textAlign: TextAlign.center,
                 ),
+              ),
+              IconButton(
+                tooltip: l.nextMonth,
+                onPressed: () => setState(
+                  () => _month = DateTime(_month.year, _month.month + 1),
+                ),
+                icon: const Icon(Icons.chevron_right),
+              ),
+            ],
+          ),
+          Row(
+            children: List.generate(
+              7,
+              (i) => Expanded(
+                child: Text(
+                  local.narrowWeekdays[(local.firstDayOfWeekIndex + i) % 7],
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisExtent: 48,
+            ),
+            itemCount: ((offset + days + 6) ~/ 7) * 7,
+            itemBuilder: (ctx, index) {
+              final day = index - offset + 1;
+              if (day < 1 || day > days) return const SizedBox();
+              final date = DateTime(_month.year, _month.month, day);
+              return TextButton(
+                style: TextButton.styleFrom(
+                  backgroundColor: DateUtils.isSameDay(date, _selected)
+                      ? SaqgoColors.blue
+                      : marked.contains(day)
+                      ? SaqgoColors.surface
+                      : Colors.transparent,
+                ),
+                onPressed: () {
+                  setState(() => _selected = date);
+                  widget.onDaySelected?.call(date);
+                },
+                child: Text('$day'),
               );
-            }),
+            },
           ),
         ],
       ),
@@ -2109,10 +2770,10 @@ class TripCard extends StatelessWidget {
         contentPadding: EdgeInsets.zero,
         leading: const SaqgoIcon('route', color: SaqgoColors.blue),
         title: Text(
-          MaterialLocalizations.of(context).formatMediumDate(record.startedAt),
+          '${record.demo ? '${l.demo} · ' : ''}${MaterialLocalizations.of(context).formatMediumDate(record.startedAt)}',
         ),
         subtitle: Text(
-          '${_durationLabel(record.duration)} · ${_distanceLabel(record.distanceMeters)} · ${record.candidateCount} ${l.candidates.toLowerCase()}',
+          '${_durationLabel(record.duration)} · ${_distanceLabel(record.distanceMeters, l)} · ${record.candidateCount} ${l.candidates.toLowerCase()}',
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: onOpen,
@@ -2178,6 +2839,179 @@ String _durationLabel(Duration duration) {
   return hours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
 }
 
-String _distanceLabel(double meters) => meters >= 1000
-    ? '${(meters / 1000).toStringAsFixed(2)} km'
-    : '${meters.round()} m';
+String _distanceLabel(double meters, AppLocalizations l) => meters >= 1000
+    ? '${(meters / 1000).toStringAsFixed(2)} ${l.kilometers}'
+    : '${meters.round()} ${l.meters}';
+
+Future<bool> _confirmAction(
+  BuildContext context,
+  String title,
+  String body,
+) async {
+  final l = AppLocalizations.of(context)!;
+  return await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(title),
+          content: Text(body),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.continueAction),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+}
+
+Future<void> _exportTrip(BuildContext context, TripRecord record) async {
+  final l = AppLocalizations.of(context)!;
+  if (!await _confirmAction(context, l.exportTrip, l.exportWarning)) return;
+  final geojson = {
+    'type': 'FeatureCollection',
+    'features': [
+      {
+        'type': 'Feature',
+        'properties': {
+          'demo': record.demo,
+          'started_at': record.startedAt.toUtc().toIso8601String(),
+          'duration_seconds': record.duration.inSeconds,
+        },
+        'geometry': {
+          'type': 'MultiLineString',
+          'coordinates': record.routeSegments
+              .where((segment) => segment.length > 1)
+              .map(
+                (segment) =>
+                    segment.map((p) => [p.longitude, p.latitude]).toList(),
+              )
+              .toList(),
+        },
+      },
+    ],
+  };
+  final bytes = utf8.encode(jsonEncode(geojson));
+  if (!context.mounted) return;
+  final renderBox = context.findRenderObject() as RenderBox?;
+  await SharePlus.instance.share(
+    ShareParams(
+      files: [
+        XFile.fromData(
+          Uint8List.fromList(bytes),
+          mimeType: 'application/geo+json',
+          name: 'saqgo-trip.geojson',
+        ),
+      ],
+      fileNameOverrides: ['saqgo-trip.geojson'],
+      sharePositionOrigin: renderBox == null
+          ? null
+          : renderBox.localToGlobal(Offset.zero) & renderBox.size,
+    ),
+  );
+}
+
+class CandidateSummary extends StatelessWidget {
+  const CandidateSummary({super.key, required this.record});
+  final TripRecord record;
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (record.demo) Text(l.demo, style: SaqgoTypography.cardTitle),
+          Text(
+            record.candidateCount == 0
+                ? l.noEvents
+                : '${l.candidates}: ${record.candidateCount}',
+            style: SaqgoTypography.body,
+          ),
+          for (final candidate in record.candidates)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                '${l.unverified} · ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(candidate.timestamp.toLocal()))} · ${l.confidenceValue}: ${(candidate.confidence * 100).round()}% · ${l.accuracy}: ${candidate.accuracyMeters.round()} ${l.meters}',
+              ),
+            ),
+          if (record.candidates.isNotEmpty && !record.demo)
+            TextButton(
+              onPressed: () => _sendObservations(context, record),
+              child: Text(l.privacyUpload),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+Future<void> _sendObservations(BuildContext context, TripRecord record) async {
+  final l = AppLocalizations.of(context)!;
+  if (!await _confirmAction(context, l.privacyUpload, l.privacyUploadWarning)) {
+    return;
+  }
+  final endpoint = HazardService.uri('/v1/observations');
+  try {
+    if (endpoint == null) throw StateError('API unavailable');
+    for (final candidate in record.candidates) {
+      final digest = await Sha256().hash(
+        utf8.encode(
+          '${record.id}:${candidate.timestamp.toUtc().toIso8601String()}',
+        ),
+      );
+      final hex = digest.bytes
+          .take(16)
+          .map((b) => b.toRadixString(16).padLeft(2, '0'))
+          .join();
+      final eventId =
+          '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
+      final response = await http
+          .post(
+            endpoint,
+            headers: {
+              'Content-Type': 'application/json',
+              'Idempotency-Key': eventId,
+            },
+            body: jsonEncode({
+              'point': {
+                'latitude': candidate.latitude,
+                'longitude': candidate.longitude,
+              },
+              'category': 'road_bump',
+              'confidence': candidate.confidence,
+              'accuracy_meters': candidate.accuracyMeters,
+              'observed_at': candidate.timestamp.toUtc().toIso8601String(),
+              'consent_version': ConsentService.version,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw StateError('Upload failed');
+      }
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.uploadDone)));
+    }
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.networkUnavailable)));
+    }
+  }
+}
+
+String _hazardTitle(AppLocalizations l, String category) => switch (category) {
+  'road_bump' => l.riskTitle,
+  'ice' => l.potentialIce,
+  'closure' => l.roadClosure,
+  'sidewalk' => l.sidewalk,
+  _ => l.hazards,
+};

@@ -61,3 +61,12 @@ def test_router_coordinates_use_latitude_longitude_order() -> None:
     ]
 
     assert compact_points(points) == "50.25,66.92|50.26,66.93"
+
+
+def test_static_asset_requests_do_not_exhaust_api_rate_limit():
+    from app.main import _requests
+    _requests.clear()
+    for _ in range(40):
+        assert client.get('/presentation-unavailable-file').status_code == 404
+    assert client.get('/v1/health').status_code == 200
+    _requests.clear()

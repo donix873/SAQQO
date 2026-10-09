@@ -37,8 +37,10 @@ void main() {
   };
   for (final entry in values.entries) {
     if (!plist.contains('<key>${entry.key}</key>')) {
-      plist = plist.replaceFirst(
-        '</dict>',
+      final closingRoot = plist.lastIndexOf('</dict>');
+      plist = plist.replaceRange(
+        closingRoot,
+        closingRoot + '</dict>'.length,
         '  <key>${entry.key}</key>\n  <string>${entry.value}</string>\n</dict>',
       );
     }

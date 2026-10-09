@@ -203,13 +203,13 @@ abstract class AppLocalizations {
   /// No description provided for @demoMap.
   ///
   /// In ru, this message translates to:
-  /// **'Карта Аркалыка'**
+  /// **'Демо-схема · не геоданные'**
   String get demoMap;
 
   /// No description provided for @mapSource.
   ///
   /// In ru, this message translates to:
-  /// **'Карта: Yandex Maps · резерв: OpenStreetMap'**
+  /// **'Карта: Яндекс Карты · подписи провайдера'**
   String get mapSource;
 
   /// No description provided for @mapUnavailable.
@@ -491,7 +491,7 @@ abstract class AppLocalizations {
   /// No description provided for @routeSource.
   ///
   /// In ru, this message translates to:
-  /// **'Маршрут: Yandex Router · резерв: OSRM'**
+  /// **'Маршруты и поиск: Яндекс через SAQGO API'**
   String get routeSource;
 
   /// No description provided for @from.
@@ -847,6 +847,312 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Закрыть'**
   String get close;
+
+  /// No description provided for @yandexKeyRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для карты нужен ключ Яндекс MapKit. Без сети доступны история и памятка SOS.'**
+  String get yandexKeyRequired;
+
+  /// No description provided for @networkUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет связи с сервером. Данные могут быть недоступны или устаревшими.'**
+  String get networkUnavailable;
+
+  /// No description provided for @retry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повторить'**
+  String get retry;
+
+  /// No description provided for @walking.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пешком'**
+  String get walking;
+
+  /// No description provided for @driving.
+  ///
+  /// In ru, this message translates to:
+  /// **'На автомобиле'**
+  String get driving;
+
+  /// No description provided for @exportTrip.
+  ///
+  /// In ru, this message translates to:
+  /// **'Экспортировать поездку'**
+  String get exportTrip;
+
+  /// No description provided for @exportWarning.
+  ///
+  /// In ru, this message translates to:
+  /// **'Файл содержит ваши координаты. Передавайте его только осознанно.'**
+  String get exportWarning;
+
+  /// No description provided for @deleteTrip.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить поездку'**
+  String get deleteTrip;
+
+  /// No description provided for @deleteDay.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить выбранный день'**
+  String get deleteDay;
+
+  /// No description provided for @eventSource.
+  ///
+  /// In ru, this message translates to:
+  /// **'Источник'**
+  String get eventSource;
+
+  /// No description provided for @verified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтверждено'**
+  String get verified;
+
+  /// No description provided for @eventTime.
+  ///
+  /// In ru, this message translates to:
+  /// **'Время события'**
+  String get eventTime;
+
+  /// No description provided for @confidenceValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уверенность'**
+  String get confidenceValue;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In ru, this message translates to:
+  /// **'Путь хранится локально в зашифрованном виде. Карты, поиск и маршрутизация передают необходимые координаты и запросы Яндексу. Наблюдения отправляются только отдельным действием и округляются сервером до сетки. Отозвать запись можно в настройках; историю можно удалить. Политика для production требует правовой проверки.'**
+  String get privacyPolicy;
+
+  /// No description provided for @consentConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'Согласиться и начать'**
+  String get consentConfirm;
+
+  /// No description provided for @recordingPermission.
+  ///
+  /// In ru, this message translates to:
+  /// **'Разрешить добровольную запись GPS и датчиков'**
+  String get recordingPermission;
+
+  /// No description provided for @recordingInterrupted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Запись остановлена: доступ, датчик или состояние приложения изменились. Сохраните результат.'**
+  String get recordingInterrupted;
+
+  /// No description provided for @lowBattery.
+  ///
+  /// In ru, this message translates to:
+  /// **'Низкий заряд: запись поставлена на паузу.'**
+  String get lowBattery;
+
+  /// No description provided for @alertNearby.
+  ///
+  /// In ru, this message translates to:
+  /// **'Впереди подтверждённый риск. Проверьте источник и время.'**
+  String get alertNearby;
+
+  /// No description provided for @privacyUpload.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отправить кандидаты на проверку'**
+  String get privacyUpload;
+
+  /// No description provided for @privacyUploadWarning.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отправятся только отдельные геометки кандидатов, время, точность и уверенность. Полный трек не отправляется.'**
+  String get privacyUploadWarning;
+
+  /// No description provided for @uploadDone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наблюдения приняты на проверку. Они ещё не подтверждены.'**
+  String get uploadDone;
+
+  /// No description provided for @previousMonth.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предыдущий месяц'**
+  String get previousMonth;
+
+  /// No description provided for @nextMonth.
+  ///
+  /// In ru, this message translates to:
+  /// **'Следующий месяц'**
+  String get nextMonth;
+
+  /// No description provided for @meters.
+  ///
+  /// In ru, this message translates to:
+  /// **'м'**
+  String get meters;
+
+  /// No description provided for @kilometers.
+  ///
+  /// In ru, this message translates to:
+  /// **'км'**
+  String get kilometers;
+
+  /// No description provided for @distanceMatrix.
+  ///
+  /// In ru, this message translates to:
+  /// **'Матрица расстояний'**
+  String get distanceMatrix;
+
+  /// No description provided for @moderationLogin.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вход модератора: пароль и код 2FA'**
+  String get moderationLogin;
+
+  /// No description provided for @password.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль'**
+  String get password;
+
+  /// No description provided for @otpCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код 2FA'**
+  String get otpCode;
+
+  /// No description provided for @login.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войти'**
+  String get login;
+
+  /// No description provided for @logout.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выйти'**
+  String get logout;
+
+  /// No description provided for @approve.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердить'**
+  String get approve;
+
+  /// No description provided for @reject.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклонить'**
+  String get reject;
+
+  /// No description provided for @decisionReason.
+  ///
+  /// In ru, this message translates to:
+  /// **'Основание решения (минимум 10 символов)'**
+  String get decisionReason;
+
+  /// No description provided for @moderationUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Модерация недоступна. Нужны настроенные сервером пароль, 2FA и HTTPS.'**
+  String get moderationUnavailable;
+
+  /// No description provided for @auditTrail.
+  ///
+  /// In ru, this message translates to:
+  /// **'Журнал решений'**
+  String get auditTrail;
+
+  /// No description provided for @sessionSaveFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть или сохранить защищённую историю. Данные не удалены.'**
+  String get sessionSaveFailed;
+
+  /// No description provided for @recalculate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перестроить маршрут'**
+  String get recalculate;
+
+  /// No description provided for @showAllDays.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все дни'**
+  String get showAllDays;
+
+  /// No description provided for @hiddenRisk.
+  ///
+  /// In ru, this message translates to:
+  /// **'Метка скрыта на этом устройстве'**
+  String get hiddenRisk;
+
+  /// No description provided for @knownRisks.
+  ///
+  /// In ru, this message translates to:
+  /// **'Известные риски'**
+  String get knownRisks;
+
+  /// No description provided for @createDemoTrip.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить демо-поездку'**
+  String get createDemoTrip;
+
+  /// No description provided for @demoRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показать пример маршрута'**
+  String get demoRoute;
+
+  /// No description provided for @roadClosure.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ограничение прохода'**
+  String get roadClosure;
+
+  /// No description provided for @sidewalk.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тротуар'**
+  String get sidewalk;
+
+  /// No description provided for @pulseMorning.
+  ///
+  /// In ru, this message translates to:
+  /// **'Утро'**
+  String get pulseMorning;
+
+  /// No description provided for @pulseAfternoon.
+  ///
+  /// In ru, this message translates to:
+  /// **'День'**
+  String get pulseAfternoon;
+
+  /// No description provided for @pulseEvening.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вечер'**
+  String get pulseEvening;
+
+  /// No description provided for @syntheticZone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Демонстрационная ячейка'**
+  String get syntheticZone;
+
+  /// No description provided for @syntheticDensity.
+  ///
+  /// In ru, this message translates to:
+  /// **'синтетическая активность, не люди'**
+  String get syntheticDensity;
 }
 
 class _AppLocalizationsDelegate

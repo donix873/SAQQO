@@ -18,11 +18,7 @@ export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$cache_root/config}"
 mkdir -p "$PUB_CACHE" "$XDG_CACHE_HOME" "$XDG_CONFIG_HOME"
 
 cd "$project_root"
-flutter create --platforms=android,ios --org kz.saqgo --project-name saqgo .
-flutter pub get
-dart run tool/configure_platforms.dart
-dart run flutter_launcher_icons
-dart run flutter_native_splash:create
+flutter pub get --enforce-lockfile
 flutter gen-l10n
 flutter analyze
 flutter test

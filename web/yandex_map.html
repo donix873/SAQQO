@@ -18,7 +18,9 @@
         let map;
         let loading;
         let latest;
-        let yandexRoute;
+        const copy={ru:{loading:'Загрузка карты Яндекса…',key:'Ключ Яндекс JavaScript API не настроен.',error:'Карта недоступна. Проверьте подключение и ключ.',location:'Ваше местоположение',demo:'Демо-данные',risk:'Подтверждённый риск'},kk:{loading:'Яндекс картасы жүктелуде…',key:'Яндекс JavaScript API кілті бапталмаған.',error:'Карта қолжетімсіз. Байланыс пен кілтті тексеріңіз.',location:'Сіздің орныңыз',demo:'Демо-деректер',risk:'Расталған қауіп'}};
+        let locale='ru';
+        let routeSignature;
 
         function showStatus(text) {
           status.textContent = text;
@@ -27,8 +29,10 @@
 
         function render(data) {
           latest = data;
+          locale=data.locale==='kk'?'kk':'ru';
+          document.documentElement.lang=locale;
           if (!data.apiKey) {
-            showStatus('Ключ JavaScript API ещё не подключён.');
+            showStatus(copy[locale].key);
             return;
           }
           if (window.ymaps) {
@@ -39,7 +43,7 @@
           loading = document.createElement('script');
           loading.src = 'https://api-maps.yandex.ru/2.1/?apikey=' + encodeURIComponent(data.apiKey) + '&lang=ru_RU';
           loading.onload = () => window.ymaps.ready(() => draw(latest));
-          loading.onerror = () => showStatus('Не удалось загрузить карту Яндекса. Проверьте ключ и разрешённый сайт.');
+          loading.onerror = () => showStatus(copy[locale].error);
           document.head.appendChild(loading);
         }
 
@@ -52,47 +56,32 @@
           map.geoObjects.removeAll();
           const route = data.route || [];
           if (route.length > 1) {
-            const drawFallbackLine = () => {
-              const line = new window.ymaps.Polyline(route, {}, { strokeColor: '#0577E6', strokeWidth: 6, strokeOpacity: 0.9 });
-              map.geoObjects.add(line);
-              map.setBounds(line.geometry.getBounds(), { checkZoomRange: true, zoomMargin: 32 });
-            };
-            if (!window.ymaps.multiRouter) {
-              drawFallbackLine();
-              return;
-            }
-            // Build the visible route with Yandex, rather than drawing the
-            // fallback provider's line. It also asks for up to three routes.
-            yandexRoute = new window.ymaps.multiRouter.MultiRoute({
-              referencePoints: [route[0], route[route.length - 1]],
-              params: { routingMode: 'auto', results: 3 }
-            }, {
-              boundsAutoApply: true,
-              wayPointVisible: true,
-              routeActiveStrokeColor: '#0577E6',
-              routeActiveStrokeWidth: 6,
-              routeStrokeColor: '#8798ad',
-              routeStrokeWidth: 4
-            });
-            map.geoObjects.add(yandexRoute);
-            yandexRoute.model.events.add('requestfail', () => {
-              map.geoObjects.remove(yandexRoute);
-              drawFallbackLine();
-            });
+            // Render exactly the selected geometry or recorded track. Never reroute history.
+            const segments=data.segments && data.segments.length?data.segments:[route];
+            for(const segment of segments){if(segment.length>1)map.geoObjects.add(new window.ymaps.Polyline(segment, {}, { strokeColor: '#3A8BFF', strokeWidth: 6 }));}
+            const line=new window.ymaps.Polyline(route);
+            const signature=JSON.stringify(route);
+            if(signature!==routeSignature){map.setBounds(line.geometry.getBounds(), { checkZoomRange: true, zoomMargin: 32 });routeSignature=signature;}
           } else {
             map.setCenter(center, 15);
           }
+          for(const hazard of data.hazards||[]){
+            const marker=new window.ymaps.Placemark(hazard.point,{balloonContent:hazard.demo?copy[locale].demo:copy[locale].risk},{preset:hazard.demo?'islands#violetCircleDotIcon':'islands#redCircleDotIcon'});
+            marker.events.add('click',()=>parent.postMessage(JSON.stringify({type:'saqgo-hazard-tap',id:hazard.id}),location.origin));
+            map.geoObjects.add(marker);
+          }
           if (data.user) {
-            map.geoObjects.add(new window.ymaps.Placemark(data.user, { balloonContent: 'Ваше местоположение' }, { preset: 'islands#blueCircleDotIcon' }));
+            map.geoObjects.add(new window.ymaps.Placemark(data.user, { balloonContent: copy[locale].location }, { preset: 'islands#blueCircleDotIcon' }));
           }
         }
 
         window.addEventListener('message', (event) => {
+          if(event.source!==parent || event.origin!==location.origin)return;
           try {
             const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
             if (data && data.type === 'saqgo-yandex-map') render(data);
           } catch (_) {
-            showStatus('Не удалось передать данные карты.');
+            showStatus(copy[locale].error);
           }
         });
       })();

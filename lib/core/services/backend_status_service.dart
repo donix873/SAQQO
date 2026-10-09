@@ -1,3 +1,4 @@
+import 'api_configuration.dart';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -21,7 +22,7 @@ class BackendStatus {
 /// Reads only the server's public capability flags. No keys, coordinates, or
 /// addresses are returned by this endpoint or stored by the client.
 class BackendStatusService {
-  static const _apiBaseUrl = String.fromEnvironment('SAQGO_API_BASE_URL');
+  static String get _apiBaseUrl => ApiConfiguration.baseUrl;
 
   Future<BackendStatus> check() async {
     final base = Uri.tryParse(_apiBaseUrl);

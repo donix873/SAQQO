@@ -1,45 +1,29 @@
 name: Publish SAQGO web
-
-# GitHub Pages is deployed automatically after every update to main.
-
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: false
-
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-      - run: flutter pub get
-      - run: >-
-          flutter build web --release --base-href /SAQQO/
-          --dart-define=YANDEX_JS_API_KEY="${{ secrets.YANDEX_JS_API_KEY }}"
-          --dart-define=SAQGO_API_BASE_URL="${{ secrets.SAQGO_API_BASE_URL }}"
-      - run: cp web/yandex_map.html build/web/yandex_map.html
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: build/web
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      # gh-pages contains the tested browser build. Deployment runs from main,
+      # as required by this repository's protected github-pages environment.
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - uses: actions/deploy-pages@v4
+        id: deployment

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
+import '../../l10n/app_localizations.dart';
+import 'presentation_map.dart';
+import '../../core/services/hazard_service.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:yandex_maps_mapkit_lite/mapkit.dart' as yandex;
 import 'package:yandex_maps_mapkit_lite/yandex_map.dart' as yandex_ui;
@@ -11,34 +13,42 @@ import '../../core/theme/radii.dart';
 /// mobile key is supplied. OpenStreetMap remains a non-secret fallback for
 /// local development and builds where MapKit was not configured.
 class ArqalykMap extends StatefulWidget {
-  const ArqalykMap({super.key, this.userLocation, this.routePoints = const []});
+  const ArqalykMap({
+    super.key,
+    this.userLocation,
+    this.routePoints = const [],
+    this.routeSegments = const [],
+    this.hazards = const [],
+    this.onHazardSelected,
+  });
 
   final LatLng? userLocation;
   final List<LatLng> routePoints;
+  final List<List<LatLng>> routeSegments;
+  final List<Hazard> hazards;
+  final ValueChanged<Hazard>? onHazardSelected;
 
   @override
   State<ArqalykMap> createState() => _ArqalykMapState();
 }
 
 class _ArqalykMapState extends State<ArqalykMap> {
-  static const _arkalyk = LatLng(50.2486, 66.9203);
   static const _yandexArkalyk = yandex.Point(
     latitude: 50.2486,
     longitude: 66.9203,
   );
 
-  final _fallbackController = MapController();
   yandex.MapWindow? _mapWindow;
   yandex.MapObjectCollection? _mapObjects;
+  final _listeners = <_HazardTap>[];
+  List<LatLng>? _fittedRoute;
 
   bool get _usesYandex => isMapkitReady;
 
   List<yandex.Point> get _yandexRoute => widget.routePoints
       .map(
-        (point) => yandex.Point(
-          latitude: point.latitude,
-          longitude: point.longitude,
-        ),
+        (point) =>
+            yandex.Point(latitude: point.latitude, longitude: point.longitude),
       )
       .toList(growable: false);
 
@@ -49,18 +59,10 @@ class _ArqalykMapState extends State<ArqalykMap> {
       _updateYandexMap();
       return;
     }
-    if (widget.routePoints.length > 1 &&
-        widget.routePoints != oldWidget.routePoints) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _fitFallbackRoute());
-    } else if (widget.userLocation != null &&
-        widget.userLocation != oldWidget.userLocation) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _fallbackController.move(widget.userLocation!, 16),
-      );
-    }
   }
 
   void _onYandexMapCreated(yandex.MapWindow mapWindow) {
+    mapWindow.map.nightModeEnabled = true;
     _mapWindow = mapWindow;
     _mapObjects = mapWindow.map.mapObjects.addCollection();
     _updateYandexMap();
@@ -72,25 +74,46 @@ class _ArqalykMapState extends State<ArqalykMap> {
     if (mapWindow == null || objects == null) return;
 
     objects.clear();
+    _listeners.clear();
     final route = _yandexRoute;
     if (route.length > 1) {
+      final segments = widget.routeSegments.isEmpty
+          ? [route]
+          : widget.routeSegments
+                .map(
+                  (segment) => segment
+                      .map(
+                        (p) => yandex.Point(
+                          latitude: p.latitude,
+                          longitude: p.longitude,
+                        ),
+                      )
+                      .toList(),
+                )
+                .toList();
       final polyline = yandex.Polyline(route);
-      objects.addPolylineWithGeometry(polyline)
-        ..style = const yandex.LineStyle(
-          strokeWidth: 6,
-          outlineWidth: 2,
-          outlineColor: Color(0x990A3866),
-        )
-        ..setStrokeColor(const Color(0xFF0577E6));
-      mapWindow.map.move(
-        mapWindow.map.cameraPositionForGeometry(
-          yandex.Geometry.fromPolyline(polyline),
-        ),
-        animation: const yandex.Animation(
-          type: yandex.AnimationType.Smooth,
-          duration: 0.4,
-        ),
-      );
+      for (final segment in segments.where((s) => s.length > 1)) {
+        final segmentPolyline = yandex.Polyline(segment);
+        objects.addPolylineWithGeometry(segmentPolyline)
+          ..style = const yandex.LineStyle(
+            strokeWidth: 6,
+            outlineWidth: 2,
+            outlineColor: Color(0x990A3866),
+          )
+          ..setStrokeColor(const Color(0xFF0577E6));
+      }
+      if (_fittedRoute != widget.routePoints) {
+        _fittedRoute = widget.routePoints;
+        mapWindow.map.move(
+          mapWindow.map.cameraPositionForGeometry(
+            yandex.Geometry.fromPolyline(polyline),
+          ),
+          animation: const yandex.Animation(
+            type: yandex.AnimationType.Smooth,
+            duration: 0.4,
+          ),
+        );
+      }
     } else {
       final location = widget.userLocation;
       final target = location == null
@@ -113,31 +136,42 @@ class _ArqalykMapState extends State<ArqalykMap> {
       );
     }
 
+    for (final hazard in widget.hazards) {
+      final listener = _HazardTap(() => widget.onHazardSelected?.call(hazard));
+      _listeners.add(listener);
+      objects.addCircle(
+          yandex.Circle(
+            yandex.Point(
+              latitude: hazard.position.latitude,
+              longitude: hazard.position.longitude,
+            ),
+            radius: hazard.accuracyMeters,
+          ),
+        )
+        ..fillColor = hazard.demo
+            ? const Color(0x669263EE)
+            : const Color(0x66E6505F)
+        ..strokeColor = hazard.demo
+            ? const Color(0xFF9263EE)
+            : const Color(0xFFE6505F)
+        ..strokeWidth = 3
+        ..addTapListener(listener);
+    }
     final location = widget.userLocation;
     if (location != null) {
       objects.addCircle(
-        yandex.Circle(
-          yandex.Point(
-            latitude: location.latitude,
-            longitude: location.longitude,
+          yandex.Circle(
+            yandex.Point(
+              latitude: location.latitude,
+              longitude: location.longitude,
+            ),
+            radius: 12,
           ),
-          radius: 12,
-        ),
-      )
+        )
         ..fillColor = const Color(0xFF0577E6)
         ..strokeColor = Colors.white
         ..strokeWidth = 4;
     }
-  }
-
-  void _fitFallbackRoute() {
-    if (widget.routePoints.length < 2) return;
-    _fallbackController.fitCamera(
-      CameraFit.bounds(
-        bounds: LatLngBounds.fromPoints(widget.routePoints),
-        padding: const EdgeInsets.all(42),
-      ),
-    );
   }
 
   @override
@@ -148,99 +182,31 @@ class _ArqalykMapState extends State<ArqalykMap> {
           color: const Color(0xFFE9F0F6),
           borderRadius: BorderRadius.circular(SaqgoRadii.card),
         ),
-        child: yandex_ui.YandexMap(
-          onMapCreated: _onYandexMapCreated,
-        ),
+        child: yandex_ui.YandexMap(onMapCreated: _onYandexMapCreated),
       );
     }
-    return _OpenStreetMap(
-      mapController: _fallbackController,
-      userLocation: widget.userLocation,
-      routePoints: widget.routePoints,
-      onMapReady: _fitFallbackRoute,
+    if (HazardService.layers.value['demo'] == true) {
+      return const PresentationMap();
+    }
+    final l = AppLocalizations.of(context)!;
+    return ColoredBox(
+      color: const Color(0xFF09111E),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(l.yandexKeyRequired, textAlign: TextAlign.center),
+        ),
+      ),
     );
   }
 }
 
-class _OpenStreetMap extends StatelessWidget {
-  const _OpenStreetMap({
-    required this.mapController,
-    required this.userLocation,
-    required this.routePoints,
-    required this.onMapReady,
-  });
-
-  final MapController mapController;
-  final LatLng? userLocation;
-  final List<LatLng> routePoints;
-  final VoidCallback onMapReady;
-
+class _HazardTap implements yandex.MapObjectTapListener {
+  _HazardTap(this.callback);
+  final VoidCallback callback;
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: const Color(0xFFE9F0F6),
-      borderRadius: BorderRadius.circular(SaqgoRadii.card),
-    ),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(SaqgoRadii.card),
-      child: FlutterMap(
-        mapController: mapController,
-        options: MapOptions(
-          initialCenter: routePoints.isNotEmpty
-              ? routePoints.first
-              : (userLocation ?? _ArqalykMapState._arkalyk),
-          initialZoom: routePoints.isNotEmpty ? 14 : 13,
-          onMapReady: onMapReady,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'kz.saqgo.saqgo',
-          ),
-          if (routePoints.length > 1)
-            PolylineLayer(
-              polylines: [
-                Polyline(
-                  points: routePoints,
-                  strokeWidth: 6,
-                  color: const Color(0xFF0577E6),
-                  borderColor: const Color(0x990A3866),
-                  borderStrokeWidth: 2,
-                ),
-              ],
-            ),
-          if (userLocation != null)
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: userLocation!,
-                  width: 46,
-                  height: 46,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0577E6),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 4),
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black38, blurRadius: 10),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.navigation_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          RichAttributionWidget(
-            attributions: const [
-              TextSourceAttribution('© OpenStreetMap contributors'),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
+  bool onMapObjectTap(yandex.MapObject object, yandex.Point point) {
+    callback();
+    return true;
+  }
 }
