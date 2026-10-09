@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html, body, #map { height: 100%; width: 100%; margin: 0; background: #e9f0f6; }
+      #status { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; color: #102136; font: 500 14px system-ui, sans-serif; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="status">Загрузка карты Яндекса…</div>
+    <script>
+      (() => {
+        const defaultCenter = [50.2486, 66.9203];
+        const status = document.getElementById('status');
+        let map;
+        let loading;
+        let latest;
+        const copy={ru:{loading:'Загрузка карты Яндекса…',key:'Ключ Яндекс JavaScript API не настроен.',error:'Карта недоступна. Проверьте подключение и ключ.',location:'Ваше местоположение',demo:'Демо-данные',risk:'Подтверждённый риск'},kk:{loading:'Яндекс картасы жүктелуде…',key:'Яндекс JavaScript API кілті бапталмаған.',error:'Карта қолжетімсіз. Байланыс пен кілтті тексеріңіз.',location:'Сіздің орныңыз',demo:'Демо-деректер',risk:'Расталған қауіп'}};
+        let locale='ru';
+        let routeSignature;
+
+        function showStatus(text) {
+          status.textContent = text;
+          status.style.display = 'grid';
+        }
+
+        function render(data) {
+          latest = data;
+          locale=data.locale==='kk'?'kk':'ru';
+          document.documentElement.lang=locale;
+          if (!data.apiKey) {
+            showStatus(copy[locale].key);
+            return;
+          }
+          if (window.ymaps) {
+            window.ymaps.ready(() => draw(data));
+            return;
+          }
+          if (loading) return;
+          loading = document.createElement('script');
+          loading.src = 'https://api-maps.yandex.ru/2.1/?apikey=' + encodeURIComponent(data.apiKey) + '&lang=ru_RU';
+          loading.onload = () => window.ymaps.ready(() => draw(latest));
+          loading.onerror = () => showStatus(copy[locale].error);
+          document.head.appendChild(loading);
+        }
+
+        function draw(data) {
+          status.style.display = 'none';
+          const center = data.user || (data.route && data.route[0]) || defaultCenter;
+          if (!map) {
+            map = new window.ymaps.Map('map', { center, zoom: data.route && data.route.length > 1 ? 14 : 13, controls: ['zoomControl', 'geolocationControl'] });
+          }
+          map.geoObjects.removeAll();
+          const route = data.route || [];
+          if (route.length > 1) {
+            // Render exactly the selected geometry or recorded track. Never reroute history.
+            const segments=data.segments && data.segments.length?data.segments:[route];
+            for(const segment of segments){if(segment.length>1)map.geoObjects.add(new window.ymaps.Polyline(segment, {}, { strokeColor: '#3A8BFF', strokeWidth: 6 }));}
+            const line=new window.ymaps.Polyline(route);
+            const signature=JSON.stringify(route);
+            if(signature!==routeSignature){map.setBounds(line.geometry.getBounds(), { checkZoomRange: true, zoomMargin: 32 });routeSignature=signature;}
+          } else {
+            map.setCenter(center, 15);
+          }
+          for(const hazard of data.hazards||[]){
+            const marker=new window.ymaps.Placemark(hazard.point,{balloonContent:hazard.demo?copy[locale].demo:copy[locale].risk},{preset:hazard.demo?'islands#violetCircleDotIcon':'islands#redCircleDotIcon'});
+            marker.events.add('click',()=>parent.postMessage(JSON.stringify({type:'saqgo-hazard-tap',id:hazard.id}),location.origin));
+            map.geoObjects.add(marker);
+          }
+          if (data.user) {
+            map.geoObjects.add(new window.ymaps.Placemark(data.user, { balloonContent: copy[locale].location }, { preset: 'islands#blueCircleDotIcon' }));
+          }
+        }
+
+        window.addEventListener('message', (event) => {
+          if(event.source!==parent || event.origin!==location.origin)return;
+          try {
+            const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+            if (data && data.type === 'saqgo-yandex-map') render(data);
+          } catch (_) {
+            showStatus(copy[locale].error);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
