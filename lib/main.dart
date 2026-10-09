@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -899,8 +900,50 @@ class SessionDetailsPage extends StatelessWidget {
   }
 }
 
-class SosPage extends StatelessWidget {
+class SosPage extends StatefulWidget {
   const SosPage({super.key});
+
+  @override
+  State<SosPage> createState() => _SosPageState();
+}
+
+class _SosPageState extends State<SosPage> {
+  LocationAvailable? _location;
+  var _loadingLocation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refreshLocation());
+  }
+
+  Future<void> _refreshLocation() async {
+    setState(() => _loadingLocation = true);
+    final result = await LocationService().requestCurrentLocation();
+    if (!mounted) return;
+    setState(() {
+      _loadingLocation = false;
+      _location = result is LocationAvailable ? result : null;
+    });
+  }
+
+  Future<void> _copyCoordinates() async {
+    final location = _location;
+    if (location == null) return;
+    await Clipboard.setData(
+      ClipboardData(
+        text:
+            '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}',
+      ),
+    );
+    if (mounted) {
+      final l = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.coordinatesCopied)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -914,6 +957,51 @@ class SosPage extends StatelessWidget {
             child: Text(
               '112',
               style: TextStyle(fontSize: 58, fontWeight: FontWeight.w800),
+            ),
+          ),
+          const SizedBox(height: SaqgoSpacing.md),
+          GlassCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l.currentCoordinates, style: SaqgoTypography.cardTitle),
+                const SizedBox(height: SaqgoSpacing.xs),
+                Text(
+                  _location == null
+                      ? l.coordinatesUnavailable
+                      : '${_location!.latitude.toStringAsFixed(6)}, ${_location!.longitude.toStringAsFixed(6)}',
+                  style: SaqgoTypography.body,
+                ),
+                if (_location != null) ...[
+                  const SizedBox(height: SaqgoSpacing.xs),
+                  Text(
+                    '${l.accuracy}: ${_location!.accuracyMeters.round()} m',
+                    style: SaqgoTypography.label,
+                  ),
+                ],
+                const SizedBox(height: SaqgoSpacing.sm),
+                Wrap(
+                  spacing: SaqgoSpacing.sm,
+                  runSpacing: SaqgoSpacing.sm,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _loadingLocation ? null : _refreshLocation,
+                      icon: _loadingLocation
+                          ? const SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const SaqgoIcon('locate'),
+                      label: Text(l.refreshLocation),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _location == null ? null : _copyCoordinates,
+                      icon: const Icon(Icons.copy_outlined),
+                      label: Text(l.copyCoordinates),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           const SizedBox(height: SaqgoSpacing.md),

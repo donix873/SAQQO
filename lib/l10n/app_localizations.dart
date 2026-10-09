@@ -626,6 +626,42 @@ abstract class AppLocalizations {
   /// **'SAQGO не связывается со спасателями автоматически.'**
   String get notAutoSent;
 
+  /// No description provided for @currentCoordinates.
+  ///
+  /// In ru, this message translates to:
+  /// **'Текущие координаты'**
+  String get currentCoordinates;
+
+  /// No description provided for @coordinatesUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Координаты пока недоступны'**
+  String get coordinatesUnavailable;
+
+  /// No description provided for @copyCoordinates.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скопировать координаты'**
+  String get copyCoordinates;
+
+  /// No description provided for @coordinatesCopied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Координаты скопированы'**
+  String get coordinatesCopied;
+
+  /// No description provided for @accuracy.
+  ///
+  /// In ru, this message translates to:
+  /// **'Точность'**
+  String get accuracy;
+
+  /// No description provided for @refreshLocation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновить геолокацию'**
+  String get refreshLocation;
+
   /// No description provided for @duringCall.
   ///
   /// In ru, this message translates to:

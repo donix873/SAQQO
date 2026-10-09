@@ -282,6 +282,24 @@ class AppLocalizationsKk extends AppLocalizations {
       'SAQGO құтқарушылармен автоматты түрде байланыспайды.';
 
   @override
+  String get currentCoordinates => 'Ағымдағы координаттар';
+
+  @override
+  String get coordinatesUnavailable => 'Координаттар әзірге қолжетімсіз';
+
+  @override
+  String get copyCoordinates => 'Координаттарды көшіру';
+
+  @override
+  String get coordinatesCopied => 'Координаттар көшірілді';
+
+  @override
+  String get accuracy => 'Дәлдік';
+
+  @override
+  String get refreshLocation => 'Геолокацияны жаңарту';
+
+  @override
   String get duringCall => 'Қоңырау кезінде';
 
   @override

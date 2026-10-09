@@ -282,6 +282,24 @@ class AppLocalizationsRu extends AppLocalizations {
       'SAQGO не связывается со спасателями автоматически.';
 
   @override
+  String get currentCoordinates => 'Текущие координаты';
+
+  @override
+  String get coordinatesUnavailable => 'Координаты пока недоступны';
+
+  @override
+  String get copyCoordinates => 'Скопировать координаты';
+
+  @override
+  String get coordinatesCopied => 'Координаты скопированы';
+
+  @override
+  String get accuracy => 'Точность';
+
+  @override
+  String get refreshLocation => 'Обновить геолокацию';
+
+  @override
   String get duringCall => 'Во время звонка';
 
   @override
