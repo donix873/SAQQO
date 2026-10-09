@@ -155,26 +155,39 @@ class OnboardingPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const BrandMark(size: 48),
-              const SizedBox(height: SaqgoSpacing.lg),
-              Text(l.welcomeTitle, style: SaqgoTypography.title),
-              const SizedBox(height: SaqgoSpacing.sm),
-              Text(l.welcomeBody, style: SaqgoTypography.body),
-              const SizedBox(height: SaqgoSpacing.lg),
-              InfoCard(
-                icon: 'hazards',
-                title: l.hazards,
-                body: l.riskDisclaimer,
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const BrandMark(size: 48),
+                      const SizedBox(height: SaqgoSpacing.lg),
+                      Text(l.welcomeTitle, style: SaqgoTypography.title),
+                      const SizedBox(height: SaqgoSpacing.sm),
+                      Text(l.welcomeBody, style: SaqgoTypography.body),
+                      const SizedBox(height: SaqgoSpacing.lg),
+                      InfoCard(
+                        icon: 'hazards',
+                        title: l.hazards,
+                        body: l.riskDisclaimer,
+                      ),
+                      const SizedBox(height: SaqgoSpacing.sm),
+                      InfoCard(
+                        icon: 'privacy',
+                        title: l.privacy,
+                        body: l.privacyBody,
+                      ),
+                      const SizedBox(height: SaqgoSpacing.sm),
+                      InfoCard(
+                        icon: 'no_gps',
+                        title: l.locationPermission,
+                        body: l.recordingConsent,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: SaqgoSpacing.sm),
-              InfoCard(icon: 'privacy', title: l.privacy, body: l.privacyBody),
-              const SizedBox(height: SaqgoSpacing.sm),
-              InfoCard(
-                icon: 'no_gps',
-                title: l.locationPermission,
-                body: l.recordingConsent,
-              ),
-              const Spacer(),
+              const SizedBox(height: SaqgoSpacing.md),
               FilledButton(
                 onPressed: onFinished,
                 style: _buttonStyle(),
@@ -285,10 +298,10 @@ class MapPage extends StatelessWidget {
                 const SizedBox(height: SaqgoSpacing.sm),
                 Row(
                   children: [
-                    OutlinedButton.icon(
+                    IconButton.filledTonal(
                       onPressed: () => _push(context, const SosPage()),
                       icon: const SaqgoIcon('sos', color: SaqgoColors.sos),
-                      label: Text(l.sos),
+                      tooltip: l.sos,
                     ),
                     const Spacer(),
                     IconButton.filledTonal(
