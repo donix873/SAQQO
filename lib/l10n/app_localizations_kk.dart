@@ -62,13 +62,13 @@ class AppLocalizationsKk extends AppLocalizations {
   String get demo => 'Демо-деректер';
 
   @override
-  String get demoMap => 'Демо-карта · геодеректер қосылмаған';
+  String get demoMap => 'Арқалық картасы';
 
   @override
-  String get mapSource => 'Карта: OpenStreetMap';
+  String get mapSource => 'Карта: Yandex Maps · резерв: OpenStreetMap';
 
   @override
-  String get mapUnavailable => 'Карта дереккөзі әлі қосылмаған';
+  String get mapUnavailable => 'Карта уақытша қолжетімсіз';
 
   @override
   String get layers => 'Карта қабаттары';
@@ -177,7 +177,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get noEvents =>
-      'Бұл демо-сессияда үміткерлер жоқ. Бұл жол мінсіз дегенді білдірмейді.';
+      'Бұл сессияда оқиға үміткерлері тіркелмеді. Бұл жол мінсіз дегенді білдірмейді.';
 
   @override
   String get saveLocal => 'Құрылғыда сақтау';
@@ -211,7 +211,7 @@ class AppLocalizationsKk extends AppLocalizations {
       'Бағытты құру мүмкін болмады. Нүктелер мен интернетті тексеріңіз.';
 
   @override
-  String get routeSource => 'Бағыт: OpenStreetMap / OSRM';
+  String get routeSource => 'Бағыт: Yandex Router · резерв: OSRM';
 
   @override
   String get from => 'Қайдан';
@@ -250,13 +250,13 @@ class AppLocalizationsKk extends AppLocalizations {
   String get riskDisclaimer => 'Бағыт қауіпсіздікке кепілдік бермейді';
 
   @override
-  String get startNavigation => 'Демо-навигацияны бастау';
+  String get startNavigation => 'Навигацияны бастау';
 
   @override
   String get navigation => 'Навигация';
 
   @override
-  String get nextTurn => 'Келесі бұрылыс белгісіз: карта қосылмаған';
+  String get nextTurn => 'Картадағы бағыт сызығымен жүріңіз';
 
   @override
   String get endNavigation => 'Аяқтау';
@@ -380,7 +380,7 @@ class AppLocalizationsKk extends AppLocalizations {
   String get changeLanguage => 'Тілді өзгерту';
 
   @override
-  String get version => '0.1.0 нұсқасы · MVP';
+  String get version => '0.2.0 нұсқасы · MVP';
 
   @override
   String get admin => 'Әкімші панелі';

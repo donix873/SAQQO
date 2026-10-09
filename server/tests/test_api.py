@@ -20,6 +20,19 @@ def test_health_has_no_personal_data() -> None:
     assert response.headers["x-request-id"]
 
 
+def test_capabilities_expose_flags_but_never_keys() -> None:
+    response = client.get("/v1/capabilities")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["service"] == "saqgo-api"
+    assert isinstance(body["geocoding"], bool)
+    assert isinstance(body["routing"], bool)
+    assert isinstance(body["distance_matrix"], bool)
+    assert "key" not in response.text.lower()
+    assert response.headers["x-request-id"]
+
+
 def test_invalid_query_uses_api_error_contract() -> None:
     response = client.get("/v1/places", params={"query": "a"})
 

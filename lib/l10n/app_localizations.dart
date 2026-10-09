@@ -203,19 +203,19 @@ abstract class AppLocalizations {
   /// No description provided for @demoMap.
   ///
   /// In ru, this message translates to:
-  /// **'Демо-карта · геоданные не подключены'**
+  /// **'Карта Аркалыка'**
   String get demoMap;
 
   /// No description provided for @mapSource.
   ///
   /// In ru, this message translates to:
-  /// **'Карта: OpenStreetMap'**
+  /// **'Карта: Yandex Maps · резерв: OpenStreetMap'**
   String get mapSource;
 
   /// No description provided for @mapUnavailable.
   ///
   /// In ru, this message translates to:
-  /// **'Картографический источник ещё не подключён'**
+  /// **'Карта временно недоступна'**
   String get mapUnavailable;
 
   /// No description provided for @layers.
@@ -425,7 +425,7 @@ abstract class AppLocalizations {
   /// No description provided for @noEvents.
   ///
   /// In ru, this message translates to:
-  /// **'В этой демонстрационной сессии нет кандидатов. Это не означает, что дорога идеальна.'**
+  /// **'За эту сессию кандидаты событий не зафиксированы. Это не означает, что дорога идеальна.'**
   String get noEvents;
 
   /// No description provided for @saveLocal.
@@ -491,7 +491,7 @@ abstract class AppLocalizations {
   /// No description provided for @routeSource.
   ///
   /// In ru, this message translates to:
-  /// **'Маршрут: OpenStreetMap / OSRM'**
+  /// **'Маршрут: Yandex Router · резерв: OSRM'**
   String get routeSource;
 
   /// No description provided for @from.
@@ -569,7 +569,7 @@ abstract class AppLocalizations {
   /// No description provided for @startNavigation.
   ///
   /// In ru, this message translates to:
-  /// **'Начать демо-навигацию'**
+  /// **'Начать навигацию'**
   String get startNavigation;
 
   /// No description provided for @navigation.
@@ -581,7 +581,7 @@ abstract class AppLocalizations {
   /// No description provided for @nextTurn.
   ///
   /// In ru, this message translates to:
-  /// **'Следующий поворот неизвестен: карта не подключена'**
+  /// **'Следуйте линии маршрута на карте'**
   String get nextTurn;
 
   /// No description provided for @endNavigation.
@@ -821,7 +821,7 @@ abstract class AppLocalizations {
   /// No description provided for @version.
   ///
   /// In ru, this message translates to:
-  /// **'Версия 0.1.0 · MVP'**
+  /// **'Версия 0.2.0 · MVP'**
   String get version;
 
   /// No description provided for @admin.

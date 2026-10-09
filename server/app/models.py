@@ -49,6 +49,15 @@ class HealthResponse(BaseModel):
     time: str
 
 
+class CapabilitiesResponse(BaseModel):
+    service: str = "saqgo-api"
+    environment: str
+    geocoding: bool
+    routing: bool
+    distance_matrix: bool
+    isochrone: bool
+
+
 def compact_points(points: list[Point]) -> str:
     """Yandex Router expects latitude,longitude; do not log this value."""
     return "|".join(f"{point.latitude},{point.longitude}" for point in points)

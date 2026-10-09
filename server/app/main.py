@@ -15,6 +15,7 @@ from .config import Settings
 from .models import (
     ApiError,
     ApiErrorBody,
+    CapabilitiesResponse,
     DistanceMatrixRequest,
     GeocodeResponse,
     HealthResponse,
@@ -104,6 +105,17 @@ async def validation_error(request: Request, _: RequestValidationError):
 @app.get("/v1/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     return HealthResponse(time=datetime.now(UTC).isoformat())
+
+
+@app.get("/v1/capabilities", response_model=CapabilitiesResponse)
+async def capabilities() -> CapabilitiesResponse:
+    return CapabilitiesResponse(
+        environment=settings.environment,
+        geocoding=settings.geocoder_key is not None,
+        routing=settings.route_details_key is not None,
+        distance_matrix=settings.distance_matrix_key is not None,
+        isochrone=settings.isochrone_key is not None,
+    )
 
 
 @app.get("/v1/places", response_model=GeocodeResponse, responses={503: {"model": ApiError}})

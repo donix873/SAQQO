@@ -62,13 +62,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get demo => 'Демо-данные';
 
   @override
-  String get demoMap => 'Демо-карта · геоданные не подключены';
+  String get demoMap => 'Карта Аркалыка';
 
   @override
-  String get mapSource => 'Карта: OpenStreetMap';
+  String get mapSource => 'Карта: Yandex Maps · резерв: OpenStreetMap';
 
   @override
-  String get mapUnavailable => 'Картографический источник ещё не подключён';
+  String get mapUnavailable => 'Карта временно недоступна';
 
   @override
   String get layers => 'Слои карты';
@@ -177,7 +177,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noEvents =>
-      'В этой демонстрационной сессии нет кандидатов. Это не означает, что дорога идеальна.';
+      'За эту сессию кандидаты событий не зафиксированы. Это не означает, что дорога идеальна.';
 
   @override
   String get saveLocal => 'Сохранить локально';
@@ -211,7 +211,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Не удалось построить маршрут. Проверьте точки и интернет.';
 
   @override
-  String get routeSource => 'Маршрут: OpenStreetMap / OSRM';
+  String get routeSource => 'Маршрут: Yandex Router · резерв: OSRM';
 
   @override
   String get from => 'Откуда';
@@ -250,13 +250,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get riskDisclaimer => 'Маршрут не гарантирует безопасность';
 
   @override
-  String get startNavigation => 'Начать демо-навигацию';
+  String get startNavigation => 'Начать навигацию';
 
   @override
   String get navigation => 'Навигация';
 
   @override
-  String get nextTurn => 'Следующий поворот неизвестен: карта не подключена';
+  String get nextTurn => 'Следуйте линии маршрута на карте';
 
   @override
   String get endNavigation => 'Завершить';
@@ -380,7 +380,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get changeLanguage => 'Изменить язык';
 
   @override
-  String get version => 'Версия 0.1.0 · MVP';
+  String get version => 'Версия 0.2.0 · MVP';
 
   @override
   String get admin => 'Админ-панель';

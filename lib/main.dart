@@ -14,6 +14,7 @@ import 'core/theme/shadows.dart';
 import 'core/theme/spacing.dart';
 import 'core/theme/theme.dart';
 import 'core/theme/typography.dart';
+import 'core/services/backend_status_service.dart';
 import 'core/services/location_service.dart';
 import 'core/services/mapkit_initializer.dart';
 import 'core/services/lifelog_store.dart';
@@ -1080,6 +1081,7 @@ class PulsePage extends StatelessWidget {
 
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -1089,12 +1091,12 @@ class HistoryPage extends StatelessWidget {
         children: [
           Text(l.localOnly, style: SaqgoTypography.body),
           const SizedBox(height: SaqgoSpacing.md),
-          CalendarCard(),
-          const SizedBox(height: SaqgoSpacing.md),
           ValueListenableBuilder<List<TripRecord>>(
             valueListenable: LifeLogStore.trips,
             builder: (context, trips, _) => Column(
               children: [
+                CalendarCard(trips: trips),
+                const SizedBox(height: SaqgoSpacing.md),
                 if (trips.isEmpty)
                   EmptyState(
                     icon: 'empty_data',
@@ -1504,27 +1506,103 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
-class AdminPage extends StatelessWidget {
+class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
+
+  @override
+  State<AdminPage> createState() => _AdminPageState();
+}
+
+class _AdminPageState extends State<AdminPage> {
+  late final Future<BackendStatus> _status =
+      BackendStatusService().check();
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return SaqgoScaffold(
       title: 'S15 · ${l.admin}',
-      child: ListView(
+      child: FutureBuilder<BackendStatus>(
+        future: _status,
+        builder: (context, snapshot) {
+          final status = snapshot.data;
+          return ListView(
+            children: [
+              GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('SAQGO API', style: SaqgoTypography.cardTitle),
+                    const SizedBox(height: SaqgoSpacing.sm),
+                    if (snapshot.connectionState == ConnectionState.waiting)
+                      const LinearProgressIndicator()
+                    else ...[
+                      _StatusRow(
+                        label: 'API',
+                        enabled: status?.reachable ?? false,
+                      ),
+                      _StatusRow(
+                        label: l.findPlace,
+                        enabled: status?.geocoding ?? false,
+                      ),
+                      _StatusRow(
+                        label: l.routes,
+                        enabled: status?.routing ?? false,
+                      ),
+                      _StatusRow(
+                        label: 'Distance Matrix',
+                        enabled: status?.distanceMatrix ?? false,
+                      ),
+                      const SizedBox(height: SaqgoSpacing.xs),
+                      Text(
+                        status?.configured == true
+                            ? l.privacyBody
+                            : 'SAQGO_API_BASE_URL · ${l.off}',
+                        style: SaqgoTypography.body,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: SaqgoSpacing.md),
+              GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l.sourceQuality, style: SaqgoTypography.cardTitle),
+                    const SizedBox(height: SaqgoSpacing.xs),
+                    Text(l.mapSource, style: SaqgoTypography.body),
+                    const SizedBox(height: SaqgoSpacing.xs),
+                    Text(l.routeSource, style: SaqgoTypography.body),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _StatusRow extends StatelessWidget {
+  const _StatusRow({required this.label, required this.enabled});
+
+  final String label;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final color = enabled ? SaqgoColors.cyan : SaqgoColors.muted;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SaqgoSpacing.xs),
+      child: Row(
         children: [
-          Text(l.comingSoon, style: SaqgoTypography.body),
-          const SizedBox(height: SaqgoSpacing.md),
-          GlassCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l.privacy, style: SaqgoTypography.cardTitle),
-                const SizedBox(height: SaqgoSpacing.xs),
-                Text(l.sourceDemo, style: SaqgoTypography.body),
-              ],
-            ),
-          ),
+          Icon(Icons.circle, size: 10, color: color),
+          const SizedBox(width: SaqgoSpacing.sm),
+          Expanded(child: Text(label, style: SaqgoTypography.body)),
+          Text(enabled ? l.enabled : l.off, style: SaqgoTypography.label),
         ],
       ),
     );
@@ -1959,41 +2037,60 @@ class EmptyState extends StatelessWidget {
 }
 
 class CalendarCard extends StatelessWidget {
-  const CalendarCard({super.key});
+  const CalendarCard({super.key, required this.trips});
+
+  final List<TripRecord> trips;
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+    final month = DateTime(now.year, now.month);
+    final days = DateUtils.getDaysInMonth(month.year, month.month);
+    final tripDays = trips
+        .where(
+          (trip) =>
+              trip.startedAt.year == month.year &&
+              trip.startedAt.month == month.month,
+        )
+        .map((trip) => trip.startedAt.day)
+        .toSet();
+
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l.monthOctober2026, style: SaqgoTypography.cardTitle),
+          Text(
+            MaterialLocalizations.of(context).formatMonthYear(month),
+            style: SaqgoTypography.cardTitle,
+          ),
           const SizedBox(height: SaqgoSpacing.sm),
           Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: List.generate(
-              31,
-              (i) => Container(
+            children: List.generate(days, (index) {
+              final day = index + 1;
+              final hasTrip = tripDays.contains(day);
+              final isToday = day == now.day;
+              return Container(
                 width: 26,
                 height: 26,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: i == 8 ? SaqgoColors.blue : Colors.transparent,
+                  color: hasTrip ? SaqgoColors.blue : Colors.transparent,
+                  border: isToday
+                      ? Border.all(color: SaqgoColors.blue)
+                      : null,
                   borderRadius: BorderRadius.circular(9),
                 ),
                 child: Text(
-                  '${i + 1}',
+                  '$day',
                   style: TextStyle(
-                    color: i == 8 ? SaqgoColors.navy : SaqgoColors.text,
+                    color: hasTrip ? SaqgoColors.navy : SaqgoColors.text,
                   ),
                 ),
-              ),
-            ),
+              );
+            }),
           ),
-          const SizedBox(height: SaqgoSpacing.sm),
-          Text(l.demo, style: SaqgoTypography.label),
         ],
       ),
     );

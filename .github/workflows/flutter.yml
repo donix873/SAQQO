@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -19,4 +19,12 @@ jobs:
           channel: stable
           cache: true
       - run: bash tool/bootstrap_flutter.sh
-      - run: flutter build apk --debug --dart-define=YANDEX_MAPKIT_API_KEY="${{ secrets.YANDEX_MAPKIT_API_KEY }}"
+      - run: >-
+          flutter build apk --debug
+          --dart-define=YANDEX_MAPKIT_API_KEY="${{ secrets.YANDEX_MAPKIT_API_KEY }}"
+          --dart-define=SAQGO_API_BASE_URL="${{ secrets.SAQGO_API_BASE_URL }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: saqgo-android-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
