@@ -183,6 +183,28 @@ class AppLocalizationsRu extends AppLocalizations {
   String get routePlanner => 'Поиск и маршрут';
 
   @override
+  String get useMyLocation => 'Моя геолокация';
+
+  @override
+  String get findPlace => 'Найти место';
+
+  @override
+  String get buildRoute => 'Построить маршрут';
+
+  @override
+  String get enterStartAndEnd => 'Укажите начальную и конечную точки';
+
+  @override
+  String get routeReady => 'Маршрут построен';
+
+  @override
+  String get routeUnavailable =>
+      'Не удалось построить маршрут. Проверьте точки и интернет.';
+
+  @override
+  String get routeSource => 'Маршрут: OpenStreetMap / OSRM';
+
+  @override
   String get from => 'Откуда';
 
   @override
@@ -337,6 +359,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get off => 'Выключено';
+
+  @override
+  String get enabled => 'Включено';
 
   @override
   String get privacyBody =>

@@ -8,13 +8,38 @@ import '../../core/theme/typography.dart';
 import '../../l10n/app_localizations.dart';
 
 class ArqalykMap extends StatefulWidget {
-  const ArqalykMap({super.key});
+  const ArqalykMap({super.key, this.userLocation, this.routePoints = const []});
+  final LatLng? userLocation;
+  final List<LatLng> routePoints;
   @override
   State<ArqalykMap> createState() => _ArqalykMapState();
 }
 
 class _ArqalykMapState extends State<ArqalykMap> {
   late final Future<LatLng?> _city = ArqalykMapService().resolveCity();
+  final _mapController = MapController();
+
+  @override
+  void didUpdateWidget(covariant ArqalykMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.userLocation != null &&
+        widget.userLocation != oldWidget.userLocation) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mapController.move(widget.userLocation!, 16);
+      });
+    }
+    if (widget.routePoints.length > 1 &&
+        widget.routePoints != oldWidget.routePoints) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mapController.fitCamera(
+          CameraFit.bounds(
+            bounds: LatLngBounds.fromPoints(widget.routePoints),
+            padding: const EdgeInsets.all(42),
+          ),
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,17 +54,53 @@ class _ArqalykMapState extends State<ArqalykMap> {
         return ClipRRect(
           borderRadius: BorderRadius.circular(SaqgoRadii.card),
           child: FlutterMap(
+            mapController: _mapController,
             options: MapOptions(initialCenter: city, initialZoom: 13),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'kz.saqgo.app',
               ),
+              if (widget.routePoints.length > 1)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: widget.routePoints,
+                      strokeWidth: 5,
+                      color: const Color(0xFF4A90FF),
+                    ),
+                  ],
+                ),
               RichAttributionWidget(
                 attributions: [
                   TextSourceAttribution('© OpenStreetMap contributors'),
                 ],
               ),
+              if (widget.userLocation != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: widget.userLocation!,
+                      width: 42,
+                      height: 42,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4A90FF),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black38, blurRadius: 8),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.my_location_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         );

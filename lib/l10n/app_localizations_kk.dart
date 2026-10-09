@@ -183,6 +183,28 @@ class AppLocalizationsKk extends AppLocalizations {
   String get routePlanner => 'Іздеу және бағыт';
 
   @override
+  String get useMyLocation => 'Менің геолокациям';
+
+  @override
+  String get findPlace => 'Орынды табу';
+
+  @override
+  String get buildRoute => 'Бағыт құру';
+
+  @override
+  String get enterStartAndEnd => 'Бастапқы және соңғы нүктелерді көрсетіңіз';
+
+  @override
+  String get routeReady => 'Бағыт құрылды';
+
+  @override
+  String get routeUnavailable =>
+      'Бағытты құру мүмкін болмады. Нүктелер мен интернетті тексеріңіз.';
+
+  @override
+  String get routeSource => 'Бағыт: OpenStreetMap / OSRM';
+
+  @override
   String get from => 'Қайдан';
 
   @override
@@ -337,6 +359,9 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get off => 'Өшірулі';
+
+  @override
+  String get enabled => 'Қосулы';
 
   @override
   String get privacyBody =>

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,6 +16,7 @@ import 'core/theme/theme.dart';
 import 'core/theme/typography.dart';
 import 'core/services/location_service.dart';
 import 'core/services/lifelog_store.dart';
+import 'core/services/routing_service.dart';
 import 'core/services/sensor_session_service.dart';
 import 'core/services/trip_track_service.dart';
 import 'features/map/arqalyk_map.dart';
@@ -223,7 +225,7 @@ class _HomeShellState extends State<HomeShell> {
     final pages = [
       MapPage(onOpenRoutes: () => setState(() => _index = 1)),
       RoutePlannerPage(
-        onNavigate: () => _push(context, const NavigationPage()),
+        onNavigate: (route) => _push(context, NavigationPage(route: route)),
       ),
       const HistoryPage(),
       SettingsPage(
@@ -258,16 +260,29 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-class MapPage extends StatelessWidget {
+class MapPage extends StatefulWidget {
   const MapPage({super.key, required this.onOpenRoutes});
   final VoidCallback onOpenRoutes;
+
+  @override
+  State<MapPage> createState() => _MapPageState();
+}
+
+class _MapPageState extends State<MapPage> {
+  LatLng? _userLocation;
+
+  void _setUserLocation(LocationAvailable location) {
+    setState(
+      () => _userLocation = LatLng(location.latitude, location.longitude),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return Stack(
       children: [
-        const Positioned.fill(child: ArqalykMap()),
+        Positioned.fill(child: ArqalykMap(userLocation: _userLocation)),
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(SaqgoSpacing.md),
@@ -310,7 +325,7 @@ class MapPage extends StatelessWidget {
                       tooltip: l.layers,
                     ),
                     const SizedBox(width: SaqgoSpacing.xs),
-                    const LocateButton(),
+                    LocateButton(onLocated: _setUserLocation),
                   ],
                 ),
                 const Spacer(),
@@ -338,7 +353,7 @@ class MapPage extends StatelessWidget {
                         children: [
                           Expanded(
                             child: FilledButton.icon(
-                              onPressed: onOpenRoutes,
+                              onPressed: widget.onOpenRoutes,
                               icon: const SaqgoIcon(
                                 'route',
                                 color: SaqgoColors.navy,
@@ -704,9 +719,94 @@ class TripResultPage extends StatelessWidget {
   }
 }
 
-class RoutePlannerPage extends StatelessWidget {
+class RoutePlannerPage extends StatefulWidget {
   const RoutePlannerPage({super.key, this.onNavigate});
-  final VoidCallback? onNavigate;
+  final ValueChanged<RouteResult>? onNavigate;
+
+  @override
+  State<RoutePlannerPage> createState() => _RoutePlannerPageState();
+}
+
+class _RoutePlannerPageState extends State<RoutePlannerPage> {
+  final _fromController = TextEditingController();
+  final _toController = TextEditingController();
+  final _routing = RoutingService();
+  PlaceResult? _from;
+  PlaceResult? _to;
+  RouteResult? _route;
+  var _loading = false;
+
+  @override
+  void dispose() {
+    _fromController.dispose();
+    _toController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _useMyLocation() async {
+    setState(() => _loading = true);
+    final location = await LocationService().requestCurrentLocation();
+    if (!mounted) return;
+    if (location is LocationAvailable) {
+      setState(() {
+        _from = PlaceResult(
+          name:
+              'GPS ${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}',
+          position: LatLng(location.latitude, location.longitude),
+        );
+        _fromController.text = _from!.name;
+        _route = null;
+      });
+    } else {
+      _showMessage(AppLocalizations.of(context)!.gpsDisabled);
+    }
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _findPlace({required bool from}) async {
+    final controller = from ? _fromController : _toController;
+    setState(() => _loading = true);
+    final place = await _routing.searchPlace(controller.text);
+    if (!mounted) return;
+    if (place == null) {
+      _showMessage(AppLocalizations.of(context)!.routeUnavailable);
+    } else {
+      setState(() {
+        if (from) {
+          _from = place;
+        } else {
+          _to = place;
+        }
+        controller.text = place.name;
+        _route = null;
+      });
+    }
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _buildRoute() async {
+    final l = AppLocalizations.of(context)!;
+    if (_from == null || _to == null) {
+      _showMessage(l.enterStartAndEnd);
+      return;
+    }
+    setState(() => _loading = true);
+    final route = await _routing.buildRoute(
+      from: _from!.position,
+      to: _to!.position,
+    );
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _route = route;
+    });
+    _showMessage(route == null ? l.routeUnavailable : l.routeReady);
+  }
+
+  void _showMessage(String message) => ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(message)));
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -714,32 +814,82 @@ class RoutePlannerPage extends StatelessWidget {
       title: l.routePlanner,
       child: ListView(
         children: [
-          PlaceField(label: l.from, value: l.testPointA, icon: 'locate'),
-          const SizedBox(height: SaqgoSpacing.sm),
-          PlaceField(label: l.to, value: l.testPointB, icon: 'map'),
-          const SizedBox(height: SaqgoSpacing.md),
-          const DemoMap(height: 180, showRoute: true),
-          const SizedBox(height: SaqgoSpacing.md),
-          RouteChoice(
-            title: l.faster,
-            duration: l.minutes12,
-            distance: l.walking12,
-            selected: true,
+          TextField(
+            controller: _fromController,
+            decoration: InputDecoration(
+              labelText: l.from,
+              suffixIcon: IconButton(
+                tooltip: l.findPlace,
+                onPressed: _loading ? null : () => _findPlace(from: true),
+                icon: const Icon(Icons.search),
+              ),
+            ),
+            onChanged: (_) => _from = null,
           ),
           const SizedBox(height: SaqgoSpacing.sm),
-          RouteChoice(
-            title: l.lessKnownRisk,
-            duration: l.minutes16,
-            distance: l.walking15,
+          TextField(
+            controller: _toController,
+            decoration: InputDecoration(
+              labelText: l.to,
+              suffixIcon: IconButton(
+                tooltip: l.findPlace,
+                onPressed: _loading ? null : () => _findPlace(from: false),
+                icon: const Icon(Icons.search),
+              ),
+            ),
+            onChanged: (_) => _to = null,
+          ),
+          const SizedBox(height: SaqgoSpacing.sm),
+          Wrap(
+            spacing: SaqgoSpacing.sm,
+            runSpacing: SaqgoSpacing.sm,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _loading ? null : _useMyLocation,
+                icon: const SaqgoIcon('locate'),
+                label: Text(l.useMyLocation),
+              ),
+              FilledButton.icon(
+                onPressed: _loading ? null : _buildRoute,
+                icon: _loading
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const SaqgoIcon('route', color: SaqgoColors.navy),
+                label: Text(l.buildRoute),
+              ),
+            ],
           ),
           const SizedBox(height: SaqgoSpacing.md),
-          Text(l.insufficientData, style: SaqgoTypography.body),
+          SizedBox(
+            height: 220,
+            child: ArqalykMap(routePoints: _route?.points ?? const []),
+          ),
+          const SizedBox(height: SaqgoSpacing.md),
+          if (_route != null)
+            RouteChoice(
+              title: l.routeReady,
+              duration: _durationLabel(_route!.duration),
+              distance: _distanceLabel(_route!.distanceMeters),
+              selected: true,
+            ),
+          const SizedBox(height: SaqgoSpacing.md),
+          Text(l.routeSource, style: SaqgoTypography.body),
           const SizedBox(height: SaqgoSpacing.xs),
           Text(l.riskDisclaimer, style: SaqgoTypography.body),
           const SizedBox(height: SaqgoSpacing.md),
           FilledButton.icon(
-            onPressed:
-                onNavigate ?? () => _push(context, const NavigationPage()),
+            onPressed: _route == null
+                ? null
+                : () {
+                    final route = _route!;
+                    if (widget.onNavigate != null) {
+                      widget.onNavigate!(route);
+                    } else {
+                      _push(context, NavigationPage(route: route));
+                    }
+                  },
             icon: const SaqgoIcon('route', color: SaqgoColors.navy),
             label: Text(l.startNavigation),
           ),
@@ -750,7 +900,8 @@ class RoutePlannerPage extends StatelessWidget {
 }
 
 class NavigationPage extends StatelessWidget {
-  const NavigationPage({super.key});
+  const NavigationPage({super.key, required this.route});
+  final RouteResult route;
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -759,7 +910,7 @@ class NavigationPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Expanded(child: DemoMap(showRoute: true)),
+          Expanded(child: ArqalykMap(routePoints: route.points)),
           const SizedBox(height: SaqgoSpacing.md),
           GlassCard(
             child: Column(
@@ -1097,7 +1248,7 @@ class _SosPageState extends State<SosPage> {
   }
 }
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
     required this.locale,
@@ -1105,6 +1256,37 @@ class SettingsPage extends StatelessWidget {
   });
   final Locale locale;
   final ValueChanged<Locale> onLocaleChanged;
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  var _locationEnabled = false;
+  var _checkingLocation = true;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refreshLocationPermission());
+  }
+
+  Future<void> _refreshLocationPermission() async {
+    final enabled = await LocationService().hasLocationPermission();
+    if (mounted) {
+      setState(() {
+        _locationEnabled = enabled;
+        _checkingLocation = false;
+      });
+    }
+  }
+
+  Future<void> _enableLocation() async {
+    setState(() => _checkingLocation = true);
+    await LocationService().requestCurrentLocation();
+    await _refreshLocationPermission();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -1126,13 +1308,22 @@ class SettingsPage extends StatelessWidget {
           SettingsTile(
             icon: 'no_gps',
             title: l.locationPermission,
-            subtitle: l.off,
+            subtitle: _checkingLocation
+                ? l.comingSoon
+                : _locationEnabled
+                ? l.enabled
+                : l.off,
+            onTap: _checkingLocation ? null : _enableLocation,
           ),
-          SettingsTile(icon: 'alert', title: l.notifications, subtitle: l.off),
+          SettingsTile(
+            icon: 'alert',
+            title: l.notifications,
+            subtitle: l.comingSoon,
+          ),
           SettingsTile(
             icon: 'sensors',
             title: l.backgroundTasks,
-            subtitle: l.off,
+            subtitle: l.comingSoon,
           ),
           const SizedBox(height: SaqgoSpacing.md),
           GlassCard(
@@ -1152,8 +1343,9 @@ class SettingsPage extends StatelessWidget {
                       label: Text(l.russian),
                     ),
                   ],
-                  selected: {locale},
-                  onSelectionChanged: (choice) => onLocaleChanged(choice.first),
+                  selected: {widget.locale},
+                  onSelectionChanged: (choice) =>
+                      widget.onLocaleChanged(choice.first),
                 ),
               ],
             ),
@@ -1281,7 +1473,8 @@ class SaqgoIcon extends StatelessWidget {
 }
 
 class LocateButton extends StatefulWidget {
-  const LocateButton({super.key});
+  const LocateButton({super.key, this.onLocated});
+  final ValueChanged<LocationAvailable>? onLocated;
   @override
   State<LocateButton> createState() => _LocateButtonState();
 }
@@ -1295,8 +1488,10 @@ class _LocateButtonState extends State<LocateButton> {
     setState(() => _loading = false);
     final l = AppLocalizations.of(context)!;
     final message = switch (result) {
-      LocationAvailable(:final accuracyMeters) =>
-        '${l.demo}: GPS ${accuracyMeters.round()} m',
+      LocationAvailable(:final accuracyMeters) => () {
+        widget.onLocated?.call(result);
+        return 'GPS ${accuracyMeters.round()} m';
+      }(),
       LocationDisabled() || LocationDenied() => l.gpsDisabled,
       LocationUnavailable() => l.mapUnavailable,
     };
@@ -1688,25 +1883,31 @@ class SettingsTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.onTap,
   });
   final String icon, title, subtitle;
+  final VoidCallback? onTap;
   @override
-  Widget build(BuildContext context) => GlassCard(
-    margin: const EdgeInsets.only(bottom: SaqgoSpacing.sm),
-    child: Row(
-      children: [
-        SaqgoIcon(icon),
-        const SizedBox(width: SaqgoSpacing.sm),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: SaqgoTypography.cardTitle),
-              Text(subtitle, style: SaqgoTypography.label),
-            ],
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: GlassCard(
+      margin: const EdgeInsets.only(bottom: SaqgoSpacing.sm),
+      child: Row(
+        children: [
+          SaqgoIcon(icon),
+          const SizedBox(width: SaqgoSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: SaqgoTypography.cardTitle),
+                Text(subtitle, style: SaqgoTypography.label),
+              ],
+            ),
           ),
-        ),
-      ],
+          if (onTap != null) const Icon(Icons.chevron_right),
+        ],
+      ),
     ),
   );
 }

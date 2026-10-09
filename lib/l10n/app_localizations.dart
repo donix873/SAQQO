@@ -434,6 +434,48 @@ abstract class AppLocalizations {
   /// **'Поиск и маршрут'**
   String get routePlanner;
 
+  /// No description provided for @useMyLocation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Моя геолокация'**
+  String get useMyLocation;
+
+  /// No description provided for @findPlace.
+  ///
+  /// In ru, this message translates to:
+  /// **'Найти место'**
+  String get findPlace;
+
+  /// No description provided for @buildRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Построить маршрут'**
+  String get buildRoute;
+
+  /// No description provided for @enterStartAndEnd.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите начальную и конечную точки'**
+  String get enterStartAndEnd;
+
+  /// No description provided for @routeReady.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут построен'**
+  String get routeReady;
+
+  /// No description provided for @routeUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось построить маршрут. Проверьте точки и интернет.'**
+  String get routeUnavailable;
+
+  /// No description provided for @routeSource.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут: OpenStreetMap / OSRM'**
+  String get routeSource;
+
   /// No description provided for @from.
   ///
   /// In ru, this message translates to:
@@ -739,6 +781,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Выключено'**
   String get off;
+
+  /// No description provided for @enabled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Включено'**
+  String get enabled;
 
   /// No description provided for @privacyBody.
   ///
